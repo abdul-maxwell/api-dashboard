@@ -14,16 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      api_keys: {
+        Row: {
+          created_at: string
+          duration: Database["public"]["Enums"]["api_key_duration"]
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          key_value: string
+          last_used_at: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration: Database["public"]["Enums"]["api_key_duration"]
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_value: string
+          last_used_at?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration?: Database["public"]["Enums"]["api_key_duration"]
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          key_value?: string
+          last_used_at?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_expiration_date: {
+        Args: { duration_type: Database["public"]["Enums"]["api_key_duration"] }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      api_key_duration: "1_week" | "30_days" | "60_days" | "forever"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +215,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      api_key_duration: ["1_week", "30_days", "60_days", "forever"],
+    },
   },
 } as const
