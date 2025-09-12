@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Copy, Eye, EyeOff, Trash2, TestTube } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface ApiKey {
@@ -23,6 +23,7 @@ interface ApiKeyCardProps {
 
 export default function ApiKeyCard({ apiKey, onDelete }: ApiKeyCardProps) {
   const [showKey, setShowKey] = useState(false);
+  const [testing, setTesting] = useState(false);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -71,6 +72,44 @@ export default function ApiKeyCard({ apiKey, onDelete }: ApiKeyCardProps) {
         return "Forever";
       default:
         return duration;
+    }
+  };
+
+  const testApiKey = async () => {
+    setTesting(true);
+    try {
+      const response = await fetch('https://gqvqvsbpszgbottgtcrf.supabase.co/functions/v1/verify-api-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          api_key: apiKey.key_value
+        })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.valid) {
+        toast({
+          title: "API Key Valid",
+          description: `Key verified successfully for user: ${result.user_id}`,
+        });
+      } else {
+        toast({
+          title: "API Key Invalid",
+          description: result.error || "API key verification failed",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Test Failed",
+        description: "Could not connect to verification endpoint",
+        variant: "destructive",
+      });
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -127,7 +166,17 @@ export default function ApiKeyCard({ apiKey, onDelete }: ApiKeyCardProps) {
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={testApiKey}
+            disabled={testing || !apiKey.is_active}
+            className="gap-2"
+          >
+            <TestTube className="h-4 w-4" />
+            {testing ? "Testing..." : "Test Key"}
+          </Button>
           <Button
             variant="destructive"
             size="sm"
