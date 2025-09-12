@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, Key, Activity, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { LogOut, Key, Activity, Clock, Gift, Sparkles, Crown, CreditCard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ApiKeyCard from "./ApiKeyCard";
 import CreateApiKeyDialog from "./CreateApiKeyDialog";
+import PaymentDialog from "./PaymentDialog";
 
 interface Profile {
   email: string;
@@ -20,6 +22,9 @@ interface ApiKey {
   is_active: boolean;
   created_at: string;
   last_used_at: string | null;
+  is_trial?: boolean;
+  payment_status?: string;
+  price_ksh?: number;
 }
 
 export default function Dashboard() {
@@ -111,61 +116,91 @@ export default function Dashboard() {
 
   const activeKeys = apiKeys.filter(key => key.is_active && (!key.expires_at || new Date(key.expires_at) > new Date()));
   const expiredKeys = apiKeys.filter(key => key.expires_at && new Date(key.expires_at) <= new Date());
+  const trialKeys = apiKeys.filter(key => key.is_trial);
+  const paidKeys = apiKeys.filter(key => !key.is_trial && key.payment_status === 'completed');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/50">
+    <div className="min-h-screen bg-gradient-secondary animate-fade-in">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 animate-slide-in-right">
           <div>
-            <h1 className="text-3xl font-bold">ZETECH MD BOT</h1>
-            <p className="text-muted-foreground">API Key Management Dashboard</p>
+            <h1 className="text-4xl font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
+              ZETECH MD BOT
+            </h1>
+            <p className="text-muted-foreground text-lg">API Key Management Dashboard</p>
             {profile && (
-              <p className="text-sm text-muted-foreground mt-1">{profile.email}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="secondary" className="font-medium">
+                  {profile.email}
+                </Badge>
+                {trialKeys.length > 0 && (
+                  <Badge className="bg-gradient-primary font-medium">
+                    <Gift className="w-3 h-3 mr-1" />
+                    Free Trial Active
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="gap-2">
+          <Button variant="outline" onClick={handleSignOut} className="gap-2 transition-smooth hover:shadow-[var(--shadow-card)]">
             <LogOut className="h-4 w-4" />
             Sign Out
           </Button>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-bounce-in">
+          <Card className="card-hover transition-smooth">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total API Keys</CardTitle>
-              <Key className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium font-poppins">Total API Keys</CardTitle>
+              <Key className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{apiKeys.length}</div>
+              <div className="text-3xl font-bold font-poppins">{apiKeys.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">All time</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="card-hover transition-smooth">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Keys</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium font-poppins">Active Keys</CardTitle>
+              <Activity className="h-5 w-5 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{activeKeys.length}</div>
+              <div className="text-3xl font-bold text-success font-poppins">{activeKeys.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">Currently active</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="card-hover transition-smooth">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Expired Keys</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium font-poppins">Trial Keys</CardTitle>
+              <Gift className="h-5 w-5 text-warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{expiredKeys.length}</div>
+              <div className="text-3xl font-bold text-warning font-poppins">{trialKeys.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">Free trials</p>
+            </CardContent>
+          </Card>
+          <Card className="card-hover transition-smooth">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium font-poppins">Paid Keys</CardTitle>
+              <Crown className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary font-poppins">{paidKeys.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">Premium access</p>
             </CardContent>
           </Card>
         </div>
 
         {/* API Keys Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">API Keys</h2>
-            <CreateApiKeyDialog onApiKeyCreated={fetchApiKeys} />
+            <h2 className="text-3xl font-poppins font-bold">API Keys</h2>
+            <div className="flex gap-3">
+              <CreateApiKeyDialog onApiKeyCreated={fetchApiKeys} />
+              <PaymentDialog onPaymentInitiated={fetchApiKeys} />
+            </div>
           </div>
 
           {loading ? (

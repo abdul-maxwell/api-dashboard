@@ -21,9 +21,13 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          is_trial: boolean | null
           key_value: string
           last_used_at: string | null
           name: string
+          payment_id: string | null
+          payment_status: string | null
+          price_ksh: number | null
           updated_at: string
           user_id: string
         }
@@ -33,9 +37,13 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_trial?: boolean | null
           key_value: string
           last_used_at?: string | null
           name: string
+          payment_id?: string | null
+          payment_status?: string | null
+          price_ksh?: number | null
           updated_at?: string
           user_id: string
         }
@@ -45,13 +53,67 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_trial?: boolean | null
           key_value?: string
           last_used_at?: string | null
           name?: string
+          payment_id?: string | null
+          payment_status?: string | null
+          price_ksh?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount_ksh: number
+          api_key_id: string | null
+          created_at: string
+          duration: Database["public"]["Enums"]["api_key_duration"]
+          id: string
+          mpesa_checkout_request_id: string | null
+          mpesa_receipt_number: string | null
+          payment_method: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_ksh: number
+          api_key_id?: string | null
+          created_at?: string
+          duration: Database["public"]["Enums"]["api_key_duration"]
+          id?: string
+          mpesa_checkout_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          payment_method?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_ksh?: number
+          api_key_id?: string | null
+          created_at?: string
+          duration?: Database["public"]["Enums"]["api_key_duration"]
+          id?: string
+          mpesa_checkout_request_id?: string | null
+          mpesa_receipt_number?: string | null
+          payment_method?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
