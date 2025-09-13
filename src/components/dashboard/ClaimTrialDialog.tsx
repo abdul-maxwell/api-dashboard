@@ -5,6 +5,7 @@ import { Gift, Loader2, Clock, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
+import { TransactionService } from "@/lib/transactionService";
 
 interface ClaimTrialDialogProps {
   onTrialClaimed: () => void;
@@ -70,6 +71,14 @@ export default function ClaimTrialDialog({ onTrialClaimed }: ClaimTrialDialogPro
 
       // Mark that the user has used their trial
       localStorage.setItem(`trial_used_${user.id}`, 'true');
+
+      // Track trial claim transaction
+      const transactionId = `trial_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await TransactionService.trackTrialClaim(
+        user.id,
+        transactionId,
+        `7-day free trial API key claimed: ${keyValue}`
+      );
 
       toast({
         title: "🎉 Free Trial Activated!",

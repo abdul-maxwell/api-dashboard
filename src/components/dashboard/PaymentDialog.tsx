@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Smartphone, Clock, Zap, Crown, Infinity } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { TransactionService } from "@/lib/transactionService";
 
 interface PaymentDialogProps {
   onPaymentInitiated: () => void;
@@ -82,12 +83,26 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
         throw new Error("Not authenticated");
       }
 
+      // Generate a unique transaction ID
+      const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Track payment attempt
+      await TransactionService.trackPaymentAttempt(
+        session.user.id,
+        transactionId,
+        selectedPlanData?.price || 0,
+        'KES',
+        'mpesa',
+        `Payment for ${selectedPlanData?.label} API key: ${apiKeyName}`
+      );
+
       const response = await supabase.functions.invoke("mpesa-payment", {
         body: {
           phone_number: phoneNumber,
           amount: selectedPlanData?.price,
           duration: selectedPlan,
           api_key_name: apiKeyName,
+          transaction_id: transactionId, // Pass transaction ID to the function
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -95,12 +110,24 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
       });
 
       if (response.error) {
+        // Track payment failure
+        await TransactionService.trackPaymentFailure(
+          transactionId,
+          response.error.message
+        );
         throw new Error(response.error.message);
       }
 
       const { data } = response;
       
       if (data.success) {
+        // Update transaction status to pending
+        await TransactionService.updateTransaction({
+          transactionId,
+          status: 'pending',
+          successMessage: 'Payment initiated successfully, waiting for user confirmation'
+        });
+
         toast({
           title: "Payment Initiated! 🎉",
           description: "Check your phone for the M-Pesa prompt. Your API key will be activated once payment is confirmed.",
@@ -116,6 +143,18 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
       }
     } catch (error: any) {
       console.error("Payment error:", error);
+      
+      // Try to track the error if we have a transaction ID
+      try {
+        const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await TransactionService.trackPaymentFailure(
+          transactionId,
+          error.message || "Payment failed due to unknown error"
+        );
+      } catch (trackingError) {
+        console.error("Failed to track payment error:", trackingError);
+      }
+      
       toast({
         title: "Payment Failed",
         description: error.message || "Failed to initiate payment. Please try again.",

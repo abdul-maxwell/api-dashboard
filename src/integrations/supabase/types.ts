@@ -244,6 +244,77 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          id: string
+          user_id: string
+          transaction_id: string
+          type: string
+          status: string
+          amount: number | null
+          currency: string
+          description: string | null
+          payment_method: string | null
+          payment_provider: string | null
+          provider_transaction_id: string | null
+          error_message: string | null
+          success_message: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+          processed_at: string | null
+          expires_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          transaction_id: string
+          type: string
+          status: string
+          amount?: number | null
+          currency?: string
+          description?: string | null
+          payment_method?: string | null
+          payment_provider?: string | null
+          provider_transaction_id?: string | null
+          error_message?: string | null
+          success_message?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          processed_at?: string | null
+          expires_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          transaction_id?: string
+          type?: string
+          status?: string
+          amount?: number | null
+          currency?: string
+          description?: string | null
+          payment_method?: string | null
+          payment_provider?: string | null
+          provider_transaction_id?: string | null
+          error_message?: string | null
+          success_message?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          processed_at?: string | null
+          expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -362,6 +433,46 @@ export type Database = {
       ensure_google_user_profile: {
         Args: {
           p_user_id: string
+        }
+        Returns: Json
+      }
+      create_transaction: {
+        Args: {
+          p_user_id: string
+          p_transaction_id: string
+          p_type: string
+          p_status: string
+          p_amount?: number
+          p_currency?: string
+          p_description?: string
+          p_payment_method?: string
+          p_payment_provider?: string
+          p_provider_transaction_id?: string
+          p_error_message?: string
+          p_success_message?: string
+          p_metadata?: Json
+          p_expires_at?: string
+        }
+        Returns: Json
+      }
+      update_transaction_status: {
+        Args: {
+          p_transaction_id: string
+          p_status: string
+          p_error_message?: string
+          p_success_message?: string
+          p_provider_transaction_id?: string
+          p_metadata?: Json
+        }
+        Returns: Json
+      }
+      admin_get_all_transactions: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_type?: string
+          p_user_id?: string
         }
         Returns: Json
       }
