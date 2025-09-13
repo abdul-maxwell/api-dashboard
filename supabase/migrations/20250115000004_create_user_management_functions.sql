@@ -56,27 +56,68 @@ BEGIN
     );
   END IF;
   
-  -- For now, we'll create the profile record and let the admin handle auth creation
-  -- In a production environment, you would use the service role key
+  -- Create a profile record with NULL user_id initially
+  -- The user_id will be set when the user actually signs up
   INSERT INTO public.profiles (
     user_id,
     email,
     username,
     role
   ) VALUES (
-    gen_random_uuid(), -- Generate a temporary UUID
+    NULL, -- user_id will be set when user signs up
     p_email,
     p_username,
     p_role::user_role
-  ) RETURNING user_id INTO new_user_id;
+  ) RETURNING id INTO new_user_id;
   
   RETURN json_build_object(
     'success', true,
-    'message', 'User profile created successfully. Please create the auth user manually.',
-    'user_id', new_user_id,
+    'message', 'User profile created successfully. The user can now sign up with these credentials.',
+    'profile_id', new_user_id,
     'email', p_email,
     'username', p_username,
     'role', p_role
+  );
+END;
+$$;
+
+-- Create function to link profile to auth user when they sign up
+CREATE OR REPLACE FUNCTION public.link_profile_to_user(
+  p_email TEXT,
+  p_auth_user_id UUID
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  profile_record RECORD;
+BEGIN
+  -- Find the profile with matching email and NULL user_id
+  SELECT * INTO profile_record 
+  FROM public.profiles 
+  WHERE email = p_email AND user_id IS NULL
+  LIMIT 1;
+  
+  IF NOT FOUND THEN
+    RETURN json_build_object(
+      'success', false,
+      'message', 'No pending profile found for this email'
+    );
+  END IF;
+  
+  -- Update the profile with the auth user_id
+  UPDATE public.profiles 
+  SET user_id = p_auth_user_id
+  WHERE id = profile_record.id;
+  
+  RETURN json_build_object(
+    'success', true,
+    'message', 'Profile linked to auth user successfully',
+    'profile_id', profile_record.id,
+    'username', profile_record.username,
+    'role', profile_record.role
   );
 END;
 $$;

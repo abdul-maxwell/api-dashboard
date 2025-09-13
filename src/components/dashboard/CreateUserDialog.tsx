@@ -90,7 +90,7 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
       if (response.success) {
         toast({
           title: "User Profile Created",
-          description: `User profile for ${form.username} (${form.email}) has been created. The user can now sign up with these credentials.`,
+          description: `User profile for ${form.username} (${form.email}) has been created. The user can now sign up with these credentials and their profile will be automatically linked.`,
         });
 
         // Reset form and close dialog

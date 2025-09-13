@@ -340,6 +340,13 @@ export type Database = {
         }
         Returns: Json
       }
+      link_profile_to_user: {
+        Args: {
+          p_email: string
+          p_auth_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       api_key_duration:
