@@ -53,7 +53,9 @@ export class TransactionService {
 
       if (error) {
         console.error('Error creating transaction:', error);
-        throw error;
+        // Don't throw error, just log it - transaction tracking is optional
+        console.warn('Transaction tracking failed, continuing without it');
+        return { success: false, message: 'Transaction tracking unavailable' };
       }
 
       const result = data as any;
@@ -65,7 +67,9 @@ export class TransactionService {
       }
     } catch (error) {
       console.error('TransactionService.createTransaction error:', error);
-      throw error;
+      // Don't throw error, just log it - transaction tracking is optional
+      console.warn('Transaction tracking failed, continuing without it');
+      return { success: false, message: 'Transaction tracking unavailable' };
     }
   }
 

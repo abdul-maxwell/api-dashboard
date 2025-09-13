@@ -86,15 +86,19 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
       // Generate a unique transaction ID
       const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Track payment attempt
-      await TransactionService.trackPaymentAttempt(
-        session.user.id,
-        transactionId,
-        selectedPlanData?.price || 0,
-        'KES',
-        'mpesa',
-        `Payment for ${selectedPlanData?.label} API key: ${apiKeyName}`
-      );
+      // Track payment attempt (optional - won't fail if tracking is unavailable)
+      try {
+        await TransactionService.trackPaymentAttempt(
+          session.user.id,
+          transactionId,
+          selectedPlanData?.price || 0,
+          'KES',
+          'mpesa',
+          `Payment for ${selectedPlanData?.label} API key: ${apiKeyName}`
+        );
+      } catch (trackingError) {
+        console.warn('Transaction tracking failed, continuing with payment:', trackingError);
+      }
 
       const response = await supabase.functions.invoke("mpesa-payment", {
         body: {
@@ -121,12 +125,16 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
       const { data } = response;
       
       if (data.success) {
-        // Update transaction status to pending
-        await TransactionService.updateTransaction({
-          transactionId,
-          status: 'pending',
-          successMessage: 'Payment initiated successfully, waiting for user confirmation'
-        });
+        // Update transaction status to pending (optional)
+        try {
+          await TransactionService.updateTransaction({
+            transactionId,
+            status: 'pending',
+            successMessage: 'Payment initiated successfully, waiting for user confirmation'
+          });
+        } catch (trackingError) {
+          console.warn('Transaction status update failed:', trackingError);
+        }
 
         toast({
           title: "Payment Initiated! 🎉",
