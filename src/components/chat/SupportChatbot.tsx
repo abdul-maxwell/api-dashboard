@@ -12,7 +12,8 @@ import {
   Loader2,
   Minimize2,
   Maximize2,
-  RotateCcw
+  RotateCcw,
+  Activity
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -67,7 +68,7 @@ export default function SupportChatbot({ userId, isAdmin = false }: SupportChatb
     }
   }, [isOpen, isMinimized]);
 
-  const sendMessage = async () => {
+  const sendMessage = async (retryCount = 0) => {
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
@@ -126,7 +127,21 @@ Be friendly, helpful, and provide clear step-by-step instructions when possible.
       });
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        console.error('Response Status:', response.status);
+        console.error('Response Headers:', Object.fromEntries(response.headers.entries()));
+        
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please check the API key configuration.');
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again later.');
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.');
+        } else {
+          throw new Error(`API request failed: ${response.status} - ${errorText}`);
+        }
       }
 
       const data = await response.json();
@@ -140,17 +155,51 @@ Be friendly, helpful, and provide clear step-by-step instructions when possible.
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Chat error:', error);
+      
+      // Retry logic for network errors
+      if (retryCount < 2 && error instanceof Error && error.message.includes('fetch')) {
+        console.log(`Retrying API call (attempt ${retryCount + 1})`);
+        setTimeout(() => {
+          sendMessage(retryCount + 1);
+        }, 1000 * (retryCount + 1)); // Exponential backoff
+        return;
+      }
+      
+      // Provide helpful fallback responses based on the user's question
+      let fallbackResponse = "I'm sorry, I'm having trouble connecting to the AI service right now. ";
+      
+      // Check if it's an authentication error
+      if (error instanceof Error && error.message.includes('Authentication failed')) {
+        fallbackResponse = "The AI service is currently being configured. In the meantime, here's how I can help you: ";
+      }
+      
+      const userQuestion = userMessage.content.toLowerCase();
+      
+      if (userQuestion.includes('api key') || userQuestion.includes('key')) {
+        fallbackResponse += "For API key help, you can:\n• Check your API keys in the dashboard\n• Create new keys using the 'Create API Key' button\n• View key status and expiration dates\n• Contact support for key-related issues\n\n💡 Tip: Your API keys are displayed in the dashboard with their status and expiration information.";
+      } else if (userQuestion.includes('payment') || userQuestion.includes('billing')) {
+        fallbackResponse += "For payment questions, you can:\n• Check your payment history in the dashboard\n• Use the payment dialog to make new payments\n• View your subscription status\n• Contact support for billing issues\n\n💡 Tip: You can make payments using M-Pesa through the payment dialog.";
+      } else if (userQuestion.includes('trial') || userQuestion.includes('free')) {
+        fallbackResponse += "For trial information:\n• Click 'Claim Free Trial' to get a 7-day trial\n• Check your trial status in the dashboard\n• Each account gets one free trial\n• Contact support if you need help with trials\n\n💡 Tip: Free trials give you full access to all features for 7 days.";
+      } else if (userQuestion.includes('admin') || userQuestion.includes('user management')) {
+        fallbackResponse += "For admin tasks:\n• Use the admin dashboard for user management\n• Check the 'Advanced Actions' page for more tools\n• Send notifications to users\n• Manage API keys for all users\n• Contact the development team for system issues\n\n💡 Tip: Admins can access advanced features in the 'Advanced Actions' page.";
+      } else if (userQuestion.includes('notification') || userQuestion.includes('message')) {
+        fallbackResponse += "For notifications:\n• Check the notification center (bell icon) in the dashboard\n• Admins can send notifications to users\n• View notification history and status\n• Mark notifications as read or delete them\n\n💡 Tip: The notification center shows all messages from admins.";
+      } else {
+        fallbackResponse += "Here are some common solutions:\n• Check the dashboard for your account status\n• Use the notification center for updates\n• Contact support for technical issues\n• Try refreshing the page if something isn't working\n• Check your internet connection\n\n💡 Tip: Most issues can be resolved by checking your dashboard or contacting support.";
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment or contact support if the issue persists.",
+        content: fallbackResponse,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
       
       toast({
-        title: "Connection Error",
-        description: "Unable to connect to the support assistant. Please try again.",
+        title: "AI Service Temporarily Unavailable",
+        description: "Using fallback responses. The AI service will be back online soon.",
         variant: "destructive",
       });
     } finally {
@@ -171,6 +220,46 @@ Be friendly, helpful, and provide clear step-by-step instructions when possible.
       title: "Chat Cleared",
       description: "Chat history has been cleared",
     });
+  };
+
+  const testConnection = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(OPENROUTER_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "ZETECH MD BOT Support",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-chat-v3-0324:free",
+          messages: [
+            { role: "user", content: "Hello, this is a connection test." }
+          ],
+          max_tokens: 50
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Connection Test Successful",
+          description: "AI service is working properly!",
+        });
+      } else {
+        throw new Error(`Connection test failed: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Connection test error:', error);
+      toast({
+        title: "Connection Test Failed",
+        description: "Unable to connect to AI service. Check console for details.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -292,7 +381,7 @@ Be friendly, helpful, and provide clear step-by-step instructions when possible.
                 className="flex-1"
               />
               <Button
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 disabled={!inputMessage.trim() || isLoading}
                 size="sm"
                 className="gap-1"
@@ -303,15 +392,27 @@ Be friendly, helpful, and provide clear step-by-step instructions when possible.
             
             {/* Chat Actions */}
             <div className="flex justify-between items-center mt-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearChat}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Clear Chat
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearChat}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Clear Chat
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => testConnection()}
+                  disabled={isLoading}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Activity className="h-3 w-3 mr-1" />
+                  Test Connection
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Powered by DeepSeek AI
               </p>
