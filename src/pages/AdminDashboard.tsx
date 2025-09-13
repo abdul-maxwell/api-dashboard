@@ -16,6 +16,7 @@ import DeleteUserDialog from "@/components/dashboard/DeleteUserDialog";
 import SendNotificationDialog from "@/components/dashboard/SendNotificationDialog";
 import CreateUserDialog from "@/components/dashboard/CreateUserDialog";
 import EditUserDialog from "@/components/dashboard/EditUserDialog";
+import ResetUserPasswordDialog from "@/components/dashboard/ResetUserPasswordDialog";
 import SupportChatbot from "@/components/chat/SupportChatbot";
 
 interface User {
@@ -653,6 +654,12 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex gap-2">
                         <EditUserDialog user={user} onUserUpdated={fetchUsers} />
+                        <ResetUserPasswordDialog 
+                          userId={user.user_id}
+                          userEmail={user.email}
+                          userName={user.username}
+                          onPasswordReset={fetchUsers}
+                        />
                         <Button
                           variant="destructive"
                           size="sm"
