@@ -273,16 +273,19 @@ BEGIN
       'updated_at', t.updated_at,
       'processed_at', t.processed_at,
       'expires_at', t.expires_at
-    )
+    ) ORDER BY t.created_at DESC
   ) INTO transactions_result
-  FROM public.transactions t
-  LEFT JOIN public.profiles p ON t.user_id = p.user_id
-  WHERE (p_status IS NULL OR t.status = p_status)
-    AND (p_type IS NULL OR t.type = p_type)
-    AND (p_user_id IS NULL OR t.user_id = p_user_id)
-  ORDER BY t.created_at DESC
-  LIMIT p_limit
-  OFFSET p_offset;
+  FROM (
+    SELECT t.*, p.email, p.username
+    FROM public.transactions t
+    LEFT JOIN public.profiles p ON t.user_id = p.user_id
+    WHERE (p_status IS NULL OR t.status = p_status)
+      AND (p_type IS NULL OR t.type = p_type)
+      AND (p_user_id IS NULL OR t.user_id = p_user_id)
+    ORDER BY t.created_at DESC
+    LIMIT p_limit
+    OFFSET p_offset
+  ) t;
 
   RETURN json_build_object(
     'success', true,
