@@ -54,6 +54,8 @@ export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFetchingUsers, setIsFetchingUsers] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [createApiKeyForm, setCreateApiKeyForm] = useState<CreateApiKeyForm>({
     targetUserId: "",
     name: "",
@@ -100,23 +102,48 @@ export default function AdminDashboard() {
   }, [navigate]);
 
   const fetchUsers = async () => {
+    if (isFetchingUsers) {
+      console.log('Already fetching users, skipping...');
+      return;
+    }
+
+    setIsFetchingUsers(true);
+    setFetchError(null);
     try {
       console.log('Fetching users...');
       
-      // First, let's check the current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      // First, let's check the current session with timeout
+      const sessionPromise = supabase.auth.getSession();
+      const sessionTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session check timeout')), 5000)
+      );
+
+      const { data: { session }, error: sessionError } = await Promise.race([
+        sessionPromise,
+        sessionTimeoutPromise
+      ]) as any;
+
       console.log('Current session:', session);
       if (sessionError) {
         console.error('Session error:', sessionError);
         throw sessionError;
       }
 
-      // Check if user has admin role
-      const { data: profile, error: profileError } = await supabase
+      // Check if user has admin role with timeout
+      const profilePromise = supabase
         .from('profiles')
         .select('role')
         .eq('user_id', session?.user.id)
         .single();
+
+      const profileTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile check timeout')), 5000)
+      );
+
+      const { data: profile, error: profileError } = await Promise.race([
+        profilePromise,
+        profileTimeoutPromise
+      ]) as any;
       
       console.log('User profile:', profile);
       if (profileError) {
@@ -128,28 +155,55 @@ export default function AdminDashboard() {
         throw new Error('User does not have admin privileges');
       }
 
-      // Try to call the admin function first
+      // Try to call the admin function first with timeout
       console.log('Calling admin_get_all_users...');
-      const { data: rpcData, error: rpcError } = await supabase.rpc('admin_get_all_users');
+      const rpcPromise = supabase.rpc('admin_get_all_users');
+      const rpcTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('RPC timeout')), 10000)
+      );
+
+      const { data: rpcData, error: rpcError } = await Promise.race([
+        rpcPromise,
+        rpcTimeoutPromise
+      ]) as any;
+
       console.log('RPC response:', { data: rpcData, error: rpcError });
       
       if (rpcError) {
         console.warn('RPC failed, trying fallback method:', rpcError);
         
-        // Fallback: Get users and API keys separately
-        const { data: profiles, error: profilesError } = await supabase
+        // Fallback: Get users and API keys separately with timeouts
+        const profilesPromise = supabase
           .from('profiles')
           .select('*')
           .order('created_at', { ascending: false });
+
+        const profilesTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Profiles fetch timeout')), 10000)
+        );
+
+        const { data: profiles, error: profilesError } = await Promise.race([
+          profilesPromise,
+          profilesTimeoutPromise
+        ]) as any;
         
         if (profilesError) {
           throw profilesError;
         }
         
-        const { data: apiKeys, error: apiKeysError } = await supabase
+        const apiKeysPromise = supabase
           .from('api_keys')
           .select('*')
           .order('created_at', { ascending: false });
+
+        const apiKeysTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('API keys fetch timeout')), 10000)
+        );
+
+        const { data: apiKeys, error: apiKeysError } = await Promise.race([
+          apiKeysPromise,
+          apiKeysTimeoutPromise
+        ]) as any;
         
         if (apiKeysError) {
           throw apiKeysError;
@@ -178,13 +232,16 @@ export default function AdminDashboard() {
       }
     } catch (error: any) {
       console.error('Full error:', error);
+      const errorMessage = error.message || 'Unknown error occurred';
+      setFetchError(errorMessage);
       toast({
         title: "Error",
-        description: `Failed to load users: ${error.message}`,
+        description: `Failed to load users: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
+      setIsFetchingUsers(false);
     }
   };
 
@@ -639,8 +696,31 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                {fetchError ? (
+                  <>
+                    <div className="text-center">
+                      <p className="text-red-600 mb-2">Failed to load users</p>
+                      <p className="text-sm text-muted-foreground mb-4">{fetchError}</p>
+                      <Button 
+                        onClick={fetchUsers} 
+                        disabled={isFetchingUsers}
+                        variant="outline"
+                      >
+                        {isFetchingUsers ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                            Retrying...
+                          </>
+                        ) : (
+                          'Retry'
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                )}
               </div>
             ) : (
               <div className="space-y-6">

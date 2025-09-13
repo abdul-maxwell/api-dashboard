@@ -24,25 +24,65 @@ export default function UsernameSetup() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
+      try {
+        console.log('UsernameSetup: Checking user session...');
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          toast({
+            title: "Session Error",
+            description: "Failed to get user session. Please try again.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          return;
+        }
 
-      setUser(session.user);
+        if (!session) {
+          console.log('No session found, redirecting to auth');
+          navigate("/auth");
+          return;
+        }
 
-      // Check if user already has a username
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('user_id', session.user.id)
-        .single();
+        console.log('Session found, setting user:', session.user.email);
+        setUser(session.user);
 
-      if (profile?.username) {
-        // User already has a username, redirect to dashboard
-        navigate("/");
-        return;
+        // Check if user already has a username with timeout
+        console.log('Checking if user has username...');
+        const profilePromise = supabase
+          .from('profiles')
+          .select('username')
+          .eq('user_id', session.user.id)
+          .single();
+
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Profile check timeout')), 5000)
+        );
+
+        const { data: profile, error: profileError } = await Promise.race([
+          profilePromise,
+          timeoutPromise
+        ]) as any;
+
+        if (profileError) {
+          console.log('Profile check error (this is normal for new users):', profileError);
+          // Don't redirect, let user set username
+        } else if (profile?.username) {
+          console.log('User already has username, redirecting to dashboard');
+          navigate("/");
+          return;
+        }
+
+        console.log('User needs to set username');
+      } catch (error) {
+        console.error('Error in checkUser:', error);
+        toast({
+          title: "Error",
+          description: "Failed to check user status. Please try again.",
+          variant: "destructive",
+        });
+        // Don't redirect on error, let user try to set username
       }
     };
 
@@ -57,18 +97,40 @@ export default function UsernameSetup() {
     
     setIsCheckingUsername(true);
     try {
-      const { data, error } = await supabase.rpc('check_username_availability', {
+      console.log('Checking username availability for:', username);
+      
+      const checkPromise = supabase.rpc('check_username_availability', {
         p_username: username
       });
 
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Username check timeout')), 10000)
+      );
+
+      const { data, error } = await Promise.race([
+        checkPromise,
+        timeoutPromise
+      ]) as any;
+
       if (error) {
         console.error('Username check error:', error);
+        setUsernameCheck({
+          available: false,
+          username,
+          message: 'Error checking username availability'
+        });
         return;
       }
 
+      console.log('Username check result:', data);
       setUsernameCheck(data as unknown as UsernameCheck);
     } catch (error) {
-      console.error('Username check error:', error);
+      console.error('Unexpected error:', error);
+      setUsernameCheck({
+        available: false,
+        username,
+        message: 'Error checking username availability'
+      });
     } finally {
       setIsCheckingUsername(false);
     }
@@ -111,18 +173,27 @@ export default function UsernameSetup() {
       console.log('Username to set:', username);
       
       // First, check if profile exists, if not create it
-      const { data: existingProfile, error: checkError } = await supabase
+      const profileCheckPromise = supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile check timeout')), 10000)
+      );
+
+      const { data: existingProfile, error: checkError } = await Promise.race([
+        profileCheckPromise,
+        timeoutPromise
+      ]) as any;
 
       console.log('Existing profile check:', { existingProfile, checkError });
 
       if (checkError && checkError.code === 'PGRST116') {
         // Profile doesn't exist, create it
         console.log('Profile does not exist, creating new profile...');
-        const { error: insertError } = await supabase
+        const insertPromise = supabase
           .from('profiles')
           .insert({
             user_id: user.id,
@@ -132,6 +203,15 @@ export default function UsernameSetup() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
+
+        const insertTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Profile creation timeout')), 15000)
+        );
+
+        const { error: insertError } = await Promise.race([
+          insertPromise,
+          insertTimeoutPromise
+        ]) as any;
 
         if (insertError) {
           console.error('Profile creation error:', insertError);
@@ -153,13 +233,22 @@ export default function UsernameSetup() {
       } else {
         // Profile exists, update it
         console.log('Profile exists, updating username...');
-        const { error: updateError } = await supabase
+        const updatePromise = supabase
           .from('profiles')
           .update({ 
             username: username,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id);
+
+        const updateTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Profile update timeout')), 15000)
+        );
+
+        const { error: updateError } = await Promise.race([
+          updatePromise,
+          updateTimeoutPromise
+        ]) as any;
 
         if (updateError) {
           console.error('Username update error:', updateError);
