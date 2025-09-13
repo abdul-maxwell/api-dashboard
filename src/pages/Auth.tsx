@@ -12,7 +12,18 @@ export default function Auth() {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        // Check if user has a username
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (profile?.username) {
+          navigate("/");
+        } else {
+          navigate("/username-setup");
+        }
       }
     };
 
@@ -46,7 +57,18 @@ export default function Auth() {
             }
           }
           
-          navigate("/");
+          // Check if user has a username after authentication
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (profile?.username) {
+            navigate("/");
+          } else {
+            navigate("/username-setup");
+          }
         }
       }
     );

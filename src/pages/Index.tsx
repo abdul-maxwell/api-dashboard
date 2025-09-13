@@ -17,6 +17,21 @@ const Index = () => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+      
+      // If user is logged in, check if they have a username
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (!profile?.username) {
+          navigate("/username-setup");
+          return;
+        }
+      }
+      
       setLoading(false);
     };
 
@@ -24,8 +39,23 @@ const Index = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setUser(session?.user ?? null);
+        
+        // If user is logged in, check if they have a username
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (!profile?.username) {
+            navigate("/username-setup");
+            return;
+          }
+        }
+        
         setLoading(false);
       }
     );

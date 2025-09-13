@@ -34,18 +34,17 @@ BEGIN
     counter := counter + 1;
   END LOOP;
   
-  -- Insert or update profile for the Google OAuth user
+  -- Insert or update profile for the Google OAuth user (without username)
+  -- Username will be set by the user in the username setup flow
   INSERT INTO public.profiles (
     user_id,
     email,
-    username,
     role,
     created_at,
     updated_at
   ) VALUES (
     NEW.id,
     NEW.email,
-    final_username,
     'user'::user_role,
     NOW(),
     NOW()
@@ -119,18 +118,16 @@ BEGIN
     counter := counter + 1;
   END LOOP;
   
-  -- Create profile
+  -- Create profile (without username - user will set it in username setup)
   INSERT INTO public.profiles (
     user_id,
     email,
-    username,
     role,
     created_at,
     updated_at
   ) VALUES (
     p_user_id,
     user_record.email,
-    final_username,
     'user'::user_role,
     NOW(),
     NOW()
@@ -138,8 +135,7 @@ BEGIN
   
   RETURN json_build_object(
     'success', true,
-    'message', 'Profile created successfully',
-    'username', final_username
+    'message', 'Profile created successfully - username setup required'
   );
 END;
 $$;
