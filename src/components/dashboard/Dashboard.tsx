@@ -9,6 +9,7 @@ import ApiKeyCard from "./ApiKeyCard";
 import PaymentDialog from "./PaymentDialog";
 import ClaimTrialDialog from "./ClaimTrialDialog";
 import DeleteApiKeyDialog from "./DeleteApiKeyDialog";
+import NotificationCenter from "./NotificationCenter";
 
 interface Profile {
   email: string;
@@ -172,10 +173,13 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <Button variant="outline" onClick={handleSignOut} className="gap-2 transition-smooth hover:shadow-[var(--shadow-card)]">
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-3">
+            <NotificationCenter userId={profile?.email || ''} />
+            <Button variant="outline" onClick={handleSignOut} className="gap-2 transition-smooth hover:shadow-[var(--shadow-card)]">
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
