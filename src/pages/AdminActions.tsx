@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import SupportChatbot from "@/components/chat/SupportChatbot";
 
 interface SystemStats {
   totalUsers: number;
@@ -38,6 +39,7 @@ interface SystemStats {
 
 export default function AdminActions() {
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [systemStats, setSystemStats] = useState<SystemStats>({
     totalUsers: 0,
@@ -51,6 +53,14 @@ export default function AdminActions() {
   });
 
   useEffect(() => {
+    const initializeUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      }
+    };
+    
+    initializeUser();
     fetchSystemStats();
   }, []);
 
@@ -440,6 +450,9 @@ export default function AdminActions() {
             </Card>
           ))}
         </div>
+        
+        {/* Support Chatbot */}
+        <SupportChatbot userId={user?.id} isAdmin={true} />
       </div>
     </div>
   );

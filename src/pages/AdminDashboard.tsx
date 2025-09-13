@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import DeleteUserDialog from "@/components/dashboard/DeleteUserDialog";
 import SendNotificationDialog from "@/components/dashboard/SendNotificationDialog";
+import SupportChatbot from "@/components/chat/SupportChatbot";
 
 interface User {
   user_id: string;
@@ -46,6 +47,7 @@ interface ManageApiKeyForm {
 }
 
 export default function AdminDashboard() {
+  const [user, setUser] = useState<any>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [createApiKeyForm, setCreateApiKeyForm] = useState<CreateApiKeyForm>({
@@ -84,6 +86,8 @@ export default function AdminDashboard() {
         navigate("/isadmin");
         return;
       }
+
+      setUser(session.user);
 
       fetchUsers();
     };
@@ -773,6 +777,9 @@ export default function AdminDashboard() {
           user={userToDelete}
           onConfirmDelete={handleDeleteUser}
         />
+        
+        {/* Support Chatbot */}
+        <SupportChatbot userId={user?.id} isAdmin={true} />
       </div>
     </div>
   );

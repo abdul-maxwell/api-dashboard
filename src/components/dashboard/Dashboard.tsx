@@ -10,6 +10,7 @@ import PaymentDialog from "./PaymentDialog";
 import ClaimTrialDialog from "./ClaimTrialDialog";
 import DeleteApiKeyDialog from "./DeleteApiKeyDialog";
 import NotificationCenter from "./NotificationCenter";
+import SupportChatbot from "../chat/SupportChatbot";
 
 interface Profile {
   email: string;
@@ -306,6 +307,9 @@ export default function Dashboard() {
           apiKey={keyToDelete}
           onConfirmDelete={handleDeleteApiKey}
         />
+        
+        {/* Support Chatbot */}
+        <SupportChatbot userId={user?.id} />
       </div>
     </div>
   );
