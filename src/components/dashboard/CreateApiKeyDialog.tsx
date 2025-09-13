@@ -16,7 +16,7 @@ export default function CreateApiKeyDialog({ onApiKeyCreated }: CreateApiKeyDial
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState("");
-  const [duration, setDuration] = useState<"1_week" | "30_days" | "60_days" | "forever" | "">("");
+  const [duration, setDuration] = useState<"1_week" | "30_days" | "60_days" | "forever">("1_week");
 
   const generateApiKey = () => {
     // Generate a secure API key

@@ -176,7 +176,7 @@ export default function SendNotificationDialog({ users, onNotificationSent }: Se
               </SelectTrigger>
               <SelectContent>
                 {users.map((user) => (
-                  <SelectItem key={user.user_id} value={user.user_id}>
+                  <SelectItem key={user.user_id} value={user.user_id || 'unknown'}>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />
                       <span>{user.email}</span>

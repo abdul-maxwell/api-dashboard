@@ -619,7 +619,7 @@ export default function AdminDashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             {users.map((user) => (
-                              <SelectItem key={user.user_id} value={user.user_id}>
+                              <SelectItem key={user.user_id} value={user.user_id || 'unknown'}>
                                 {user.email} ({user.username})
                               </SelectItem>
                             ))}
