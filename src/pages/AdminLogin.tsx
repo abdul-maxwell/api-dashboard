@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,22 +17,54 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
 
-    // Hardcoded admin credentials
-    if (credentials.username === "admin" && credentials.password === "Admin@BSE2025") {
-      localStorage.setItem("adminAuthenticated", "true");
+    try {
+      // Use the username as email for Supabase authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.username,
+        password: credentials.password,
+      });
+
+      if (error) {
+        toast({
+          title: "Access Denied",
+          description: "Invalid credentials",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if the user has admin role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (profileError || !profile || !['admin', 'super_admin'].includes(profile.role)) {
+        // Sign out the user if they don't have admin privileges
+        await supabase.auth.signOut();
+        toast({
+          title: "Access Denied",
+          description: "Admin privileges required",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Access Granted",
         description: "Welcome to the admin panel",
       });
       navigate("/admin");
-    } else {
+    } catch (error: any) {
       toast({
-        title: "Access Denied",
-        description: "Invalid credentials",
+        title: "Error",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -44,17 +77,22 @@ export default function AdminLogin() {
           <CardTitle className="text-2xl font-poppins">Admin Access</CardTitle>
           <CardDescription>
             Enter your admin credentials to access the management panel
+            <br />
+            <span className="text-xs text-muted-foreground">
+              Email: admin@zetechmd.com | Password: Admin@BSE2025
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Email</Label>
               <Input
                 id="username"
-                type="text"
+                type="email"
                 value={credentials.username}
                 onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="admin@zetechmd.com"
                 required
               />
             </div>

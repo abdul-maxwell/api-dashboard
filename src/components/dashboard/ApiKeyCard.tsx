@@ -14,11 +14,14 @@ interface ApiKey {
   is_active: boolean;
   created_at: string;
   last_used_at: string | null;
+  is_trial?: boolean;
+  payment_status?: string;
+  price_ksh?: number;
 }
 
 interface ApiKeyCardProps {
   apiKey: ApiKey;
-  onDelete: (id: string) => void;
+  onDelete: (apiKey: ApiKey) => void;
 }
 
 export default function ApiKeyCard({ apiKey, onDelete }: ApiKeyCardProps) {
@@ -180,7 +183,7 @@ export default function ApiKeyCard({ apiKey, onDelete }: ApiKeyCardProps) {
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => onDelete(apiKey.id)}
+            onClick={() => onDelete(apiKey)}
             className="gap-2"
           >
             <Trash2 className="h-4 w-4" />

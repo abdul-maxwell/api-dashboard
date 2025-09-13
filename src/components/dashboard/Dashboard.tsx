@@ -8,9 +8,11 @@ import { toast } from "@/hooks/use-toast";
 import ApiKeyCard from "./ApiKeyCard";
 import PaymentDialog from "./PaymentDialog";
 import ClaimTrialDialog from "./ClaimTrialDialog";
+import DeleteApiKeyDialog from "./DeleteApiKeyDialog";
 
 interface Profile {
   email: string;
+  has_ever_had_trial?: boolean;
 }
 
 interface ApiKey {
@@ -31,6 +33,9 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
+  const [hasEverHadTrial, setHasEverHadTrial] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -70,6 +75,12 @@ export default function Dashboard() {
 
       if (error) throw error;
       setApiKeys(data || []);
+
+      // Check if user has ever had a trial (including deleted ones)
+      const trialKeys = data?.filter(key => key.is_trial) || [];
+      const hasCurrentTrial = trialKeys.length > 0;
+      const hasStoredTrial = localStorage.getItem(`trial_used_${user.id}`) === 'true';
+      setHasEverHadTrial(hasCurrentTrial || hasStoredTrial);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -87,12 +98,25 @@ export default function Dashboard() {
 
   const handleDeleteApiKey = async (id: string) => {
     try {
+      // Check if the key being deleted is a trial key
+      const keyToDelete = apiKeys.find(key => key.id === id);
+      const isTrialKey = keyToDelete?.is_trial;
+
       const { error } = await supabase
         .from('api_keys')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+
+      // If deleting a trial key, mark that the user has used their trial
+      if (isTrialKey) {
+        const user = (await supabase.auth.getUser()).data.user;
+        if (user) {
+          localStorage.setItem(`trial_used_${user.id}`, 'true');
+          setHasEverHadTrial(true);
+        }
+      }
 
       toast({
         title: "API Key Deleted",
@@ -109,6 +133,11 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteClick = (apiKey: ApiKey) => {
+    setKeyToDelete(apiKey);
+    setDeleteDialogOpen(true);
+  };
+
   useEffect(() => {
     fetchProfile();
     fetchApiKeys();
@@ -118,7 +147,6 @@ export default function Dashboard() {
   const expiredKeys = apiKeys.filter(key => key.expires_at && new Date(key.expires_at) <= new Date());
   const trialKeys = apiKeys.filter(key => key.is_trial);
   const paidKeys = apiKeys.filter(key => !key.is_trial && key.payment_status === 'completed');
-  const hasEverHadTrial = trialKeys.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-secondary animate-fade-in">
@@ -231,7 +259,7 @@ export default function Dashboard() {
                 <ApiKeyCard
                   key={apiKey.id}
                   apiKey={apiKey}
-                  onDelete={handleDeleteApiKey}
+                  onDelete={handleDeleteClick}
                 />
               ))}
             </div>
@@ -263,6 +291,14 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteApiKeyDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          apiKey={keyToDelete}
+          onConfirmDelete={handleDeleteApiKey}
+        />
       </div>
     </div>
   );

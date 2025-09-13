@@ -62,29 +62,82 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem("adminAuthenticated");
-    if (!isAuthenticated) {
-      navigate("/isadmin");
-      return;
-    }
-    fetchUsers();
+    const checkAdminAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/isadmin");
+        return;
+      }
+
+      // Check if user has admin role
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (error || !profile || !['admin', 'super_admin'].includes(profile.role)) {
+        navigate("/isadmin");
+        return;
+      }
+
+      fetchUsers();
+    };
+
+    checkAdminAuth();
   }, [navigate]);
 
   const fetchUsers = async () => {
     try {
+      console.log('Fetching users...');
+      
+      // First, let's check the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw sessionError;
+      }
+
+      // Check if user has admin role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', session?.user.id)
+        .single();
+      
+      console.log('User profile:', profile);
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        throw profileError;
+      }
+
+      if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
+        throw new Error('User does not have admin privileges');
+      }
+
+      // Now try to call the admin function
+      console.log('Calling admin_get_all_users...');
       const { data, error } = await supabase.rpc('admin_get_all_users');
-      if (error) throw error;
+      console.log('RPC response:', { data, error });
+      
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
       
       // Parse the JSON data properly
       const parsedUsers = (data || []).map((user: any) => ({
         ...user,
         api_keys: Array.isArray(user.api_keys) ? user.api_keys : []
       }));
+      console.log('Parsed users:', parsedUsers);
       setUsers(parsedUsers);
     } catch (error: any) {
+      console.error('Full error:', error);
       toast({
         title: "Error",
-        description: "Failed to load users",
+        description: `Failed to load users: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -92,8 +145,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuthenticated");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/");
   };
 

@@ -28,7 +28,12 @@ export default function ClaimTrialDialog({ onTrialClaimed }: ClaimTrialDialogPro
           .charAt(Math.floor(Math.random() * 62))
       ).join('');
 
-      // Check if user already has a trial
+      // Check if user already has a trial or has ever had one
+      const hasStoredTrial = localStorage.getItem(`trial_used_${user.id}`) === 'true';
+      if (hasStoredTrial) {
+        throw new Error("You have already used your free trial. Only one trial per account is allowed.");
+      }
+
       const { data: existingTrials } = await supabase
         .from('api_keys')
         .select('id')
@@ -62,6 +67,9 @@ export default function ClaimTrialDialog({ onTrialClaimed }: ClaimTrialDialogPro
       if (error) {
         throw error;
       }
+
+      // Mark that the user has used their trial
+      localStorage.setItem(`trial_used_${user.id}`, 'true');
 
       toast({
         title: "🎉 Free Trial Activated!",
