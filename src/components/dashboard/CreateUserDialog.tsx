@@ -20,9 +20,17 @@ interface CreateUserForm {
   role: 'user' | 'admin' | 'super_admin';
 }
 
+interface UsernameCheck {
+  available: boolean;
+  username: string;
+  message: string;
+}
+
 export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameCheck, setUsernameCheck] = useState<UsernameCheck | null>(null);
   const [form, setForm] = useState<CreateUserForm>({
     email: "",
     username: "",
@@ -71,6 +79,16 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
       return;
     }
 
+    // Check if username is available
+    if (usernameCheck && !usernameCheck.available) {
+      toast({
+        title: "Validation Error",
+        description: "Username is already taken. Please choose a different username.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Use the database function to create user profile
@@ -101,6 +119,7 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
           confirmPassword: "",
           role: 'user'
         });
+        setUsernameCheck(null);
         setOpen(false);
         onUserCreated();
       } else {
@@ -140,6 +159,35 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
       ...prev,
       [field]: value
     }));
+
+    // Check username availability when username changes
+    if (field === 'username' && value.length >= 3) {
+      checkUsernameAvailability(value);
+    } else if (field === 'username' && value.length < 3) {
+      setUsernameCheck(null);
+    }
+  };
+
+  const checkUsernameAvailability = async (username: string) => {
+    if (username.length < 3) return;
+    
+    setIsCheckingUsername(true);
+    try {
+      const { data, error } = await supabase.rpc('check_username_availability', {
+        p_username: username
+      });
+
+      if (error) {
+        console.error('Username check error:', error);
+        return;
+      }
+
+      setUsernameCheck(data as unknown as UsernameCheck);
+    } catch (error) {
+      console.error('Username check error:', error);
+    } finally {
+      setIsCheckingUsername(false);
+    }
   };
 
   return (
@@ -173,15 +221,30 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
 
           <div>
             <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              type="text"
-              value={form.username}
-              onChange={(e) => handleInputChange('username', e.target.value)}
-              placeholder="username"
-              minLength={3}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="username"
+                type="text"
+                value={form.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
+                placeholder="username"
+                minLength={3}
+                required
+                className={usernameCheck ? (usernameCheck.available ? 'border-green-500' : 'border-red-500') : ''}
+              />
+              {isCheckingUsername && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                </div>
+              )}
+            </div>
+            {usernameCheck && (
+              <p className={`text-xs mt-1 ${
+                usernameCheck.available ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {usernameCheck.message}
+              </p>
+            )}
           </div>
 
           <div>

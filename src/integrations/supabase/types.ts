@@ -347,6 +347,18 @@ export type Database = {
         }
         Returns: Json
       }
+      check_username_availability: {
+        Args: {
+          p_username: string
+        }
+        Returns: Json
+      }
+      get_user_by_username_or_email: {
+        Args: {
+          p_identifier: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       api_key_duration:
