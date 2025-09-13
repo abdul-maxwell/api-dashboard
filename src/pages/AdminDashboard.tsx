@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import DeleteUserDialog from "@/components/dashboard/DeleteUserDialog";
 
 interface User {
   user_id: string;
@@ -59,6 +60,8 @@ export default function AdminDashboard() {
     pauseReason: ""
   });
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>("");
+  const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -401,10 +404,6 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
-      return;
-    }
-
     try {
       // Delete user's API keys first
       const { error: apiKeysError } = await supabase
@@ -434,6 +433,11 @@ export default function AdminDashboard() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleDeleteUserClick = (user: User) => {
+    setUserToDelete(user);
+    setDeleteUserDialogOpen(true);
   };
 
   const getStatusBadge = (apiKey: any) => {
@@ -627,7 +631,7 @@ export default function AdminDashboard() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDeleteUser(user.user_id)}
+                        onClick={() => handleDeleteUserClick(user)}
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete User
@@ -745,6 +749,14 @@ export default function AdminDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete User Confirmation Dialog */}
+        <DeleteUserDialog
+          open={deleteUserDialogOpen}
+          onOpenChange={setDeleteUserDialogOpen}
+          user={userToDelete}
+          onConfirmDelete={handleDeleteUser}
+        />
       </div>
     </div>
   );
