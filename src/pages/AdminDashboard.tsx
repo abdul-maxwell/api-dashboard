@@ -116,23 +116,54 @@ export default function AdminDashboard() {
         throw new Error('User does not have admin privileges');
       }
 
-      // Now try to call the admin function
+      // Try to call the admin function first
       console.log('Calling admin_get_all_users...');
-      const { data, error } = await supabase.rpc('admin_get_all_users');
-      console.log('RPC response:', { data, error });
+      const { data: rpcData, error: rpcError } = await supabase.rpc('admin_get_all_users');
+      console.log('RPC response:', { data: rpcData, error: rpcError });
       
-      if (error) {
-        console.error('RPC error:', error);
-        throw error;
+      if (rpcError) {
+        console.warn('RPC failed, trying fallback method:', rpcError);
+        
+        // Fallback: Get users and API keys separately
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (profilesError) {
+          throw profilesError;
+        }
+        
+        const { data: apiKeys, error: apiKeysError } = await supabase
+          .from('api_keys')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (apiKeysError) {
+          throw apiKeysError;
+        }
+        
+        // Combine profiles with their API keys
+        const usersWithKeys = (profiles || []).map((profile: any) => ({
+          user_id: profile.user_id,
+          email: profile.email,
+          username: profile.username || 'user_' + profile.user_id.substring(0, 8),
+          role: profile.role || 'user',
+          created_at: profile.created_at,
+          api_keys: (apiKeys || []).filter((key: any) => key.user_id === profile.user_id)
+        }));
+        
+        console.log('Fallback users:', usersWithKeys);
+        setUsers(usersWithKeys);
+      } else {
+        // Parse the JSON data properly
+        const parsedUsers = (rpcData || []).map((user: any) => ({
+          ...user,
+          api_keys: Array.isArray(user.api_keys) ? user.api_keys : []
+        }));
+        console.log('Parsed users:', parsedUsers);
+        setUsers(parsedUsers);
       }
-      
-      // Parse the JSON data properly
-      const parsedUsers = (data || []).map((user: any) => ({
-        ...user,
-        api_keys: Array.isArray(user.api_keys) ? user.api_keys : []
-      }));
-      console.log('Parsed users:', parsedUsers);
-      setUsers(parsedUsers);
     } catch (error: any) {
       console.error('Full error:', error);
       toast({

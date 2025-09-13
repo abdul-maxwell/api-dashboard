@@ -1,30 +1,14 @@
--- Test the admin function step by step
--- Run these in order in Supabase SQL Editor
+-- Test if the admin function works
+-- First, let's check if the profiles table has the required columns
+SELECT column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name = 'profiles' 
+ORDER BY ordinal_position;
 
--- 1. Check if you're authenticated as admin
-SELECT 
-  auth.uid() as current_user_id,
-  public.is_admin() as is_admin_result;
+-- Check if user_role enum exists
+SELECT enumlabel 
+FROM pg_enum 
+WHERE enumtypid = (SELECT oid FROM pg_type WHERE typname = 'user_role');
 
--- 2. If is_admin() returns false, check why
-SELECT 
-  p.user_id,
-  p.email,
-  p.username,
-  p.role,
-  (p.user_id = auth.uid()) as is_current_user
-FROM public.profiles p
-WHERE p.role IN ('admin', 'super_admin');
-
--- 3. Test the function directly
+-- Test the admin function (this will fail if user is not admin, which is expected)
 SELECT * FROM public.admin_get_all_users();
-
--- 4. If the function fails, try a simpler version
-SELECT 
-  p.user_id,
-  p.email,
-  p.username,
-  p.role,
-  p.created_at
-FROM public.profiles p
-ORDER BY p.created_at DESC;
