@@ -215,6 +215,8 @@ export default function AuthForm() {
     
     try {
       console.log('Attempting Google Sign-In...');
+      console.log('Current origin:', window.location.origin);
+      console.log('Supabase URL:', supabase.supabaseUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -233,18 +235,19 @@ export default function AuthForm() {
         console.error('Google Sign-In error:', error);
         toast({
           title: "Google Sign-In failed",
-          description: error.message,
+          description: `Error: ${error.message}. Check console for details.`,
           variant: "destructive",
         });
       } else {
         console.log('Google Sign-In initiated successfully');
+        console.log('Redirect URL:', data.url);
         // The user will be redirected to Google, so no need to show success message
       }
     } catch (error) {
       console.error('Unexpected error during Google Sign-In:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred during Google Sign-In.",
+        description: "An unexpected error occurred during Google Sign-In. Check console for details.",
         variant: "destructive",
       });
     } finally {
