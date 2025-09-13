@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Shield, Users, Key, Plus, Pause, Play, Trash2, Settings } from "lucide-react";
+import { LogOut, Shield, Users, Key, Plus, Pause, Play, Trash2, Settings, Wrench } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -512,6 +512,15 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 <div className="flex gap-2 min-w-max">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/admin/actions')}
+                    className="gap-1"
+                  >
+                    <Wrench className="h-3 w-3" />
+                    Advanced Actions
+                  </Button>
                   <SendNotificationDialog 
                     users={users} 
                     onNotificationSent={fetchUsers}
