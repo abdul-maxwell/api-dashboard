@@ -51,23 +51,23 @@ export default function Auth() {
           if (session.user.app_metadata?.provider === 'google') {
             try {
               console.log('Google OAuth user detected, ensuring profile exists...');
+              console.log('User ID:', session.user.id);
+              console.log('User email:', session.user.email);
+              
               const { data, error } = await supabase.rpc('ensure_google_user_profile', {
                 p_user_id: session.user.id
               });
 
               if (error) {
                 console.error('Error ensuring Google user profile:', error);
-                toast({
-                  title: "Profile Setup Error",
-                  description: "There was an issue setting up your profile. Please try again.",
-                  variant: "destructive",
-                });
-                return;
+                // Don't show error toast, just log it and continue
+                // The user can still proceed to username setup
+              } else {
+                console.log('Google user profile ensured:', data);
               }
-
-              console.log('Google user profile ensured:', data);
             } catch (error) {
               console.error('Error handling Google OAuth user:', error);
+              // Don't block the flow, just log the error
             }
           }
           

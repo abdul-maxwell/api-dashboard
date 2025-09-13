@@ -107,25 +107,72 @@ export default function UsernameSetup() {
     setIsLoading(true);
 
     try {
-      // Update the user's profile with the username
-      const { error } = await supabase
+      console.log('Setting username for user:', user.id);
+      console.log('Username to set:', username);
+      
+      // First, check if profile exists, if not create it
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
-        .update({ 
-          username: username,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-      if (error) {
-        console.error('Username update error:', error);
+      console.log('Existing profile check:', { existingProfile, checkError });
+
+      if (checkError && checkError.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        console.log('Profile does not exist, creating new profile...');
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            username: username,
+            role: 'user',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (insertError) {
+          console.error('Profile creation error:', insertError);
+          toast({
+            title: "Error",
+            description: `Failed to create profile: ${insertError.message}`,
+            variant: "destructive",
+          });
+          return;
+        }
+      } else if (checkError) {
+        console.error('Profile check error:', checkError);
         toast({
           title: "Error",
-          description: "Failed to set username. Please try again.",
+          description: `Failed to check profile: ${checkError.message}`,
           variant: "destructive",
         });
         return;
+      } else {
+        // Profile exists, update it
+        console.log('Profile exists, updating username...');
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            username: username,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Username update error:', updateError);
+          toast({
+            title: "Error",
+            description: `Failed to set username: ${updateError.message}`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
+      console.log('Username set successfully, redirecting to dashboard...');
       toast({
         title: "Username set successfully!",
         description: `Welcome, ${username}! You can now access your dashboard.`,
@@ -137,7 +184,7 @@ export default function UsernameSetup() {
       console.error('Unexpected error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: `An unexpected error occurred: ${error}`,
         variant: "destructive",
       });
     } finally {
