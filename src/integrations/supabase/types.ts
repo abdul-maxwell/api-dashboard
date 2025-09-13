@@ -359,6 +359,12 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_google_user_profile: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       api_key_duration:
