@@ -14,9 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_api_key_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_api_key_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_api_key_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_target_api_key_id_fkey"
+            columns: ["target_api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
+          admin_notes: string | null
+          api_key_type: Database["public"]["Enums"]["api_key_type"] | null
           created_at: string
+          created_by_admin: boolean | null
           duration: Database["public"]["Enums"]["api_key_duration"]
           expires_at: string | null
           id: string
@@ -25,14 +66,20 @@ export type Database = {
           key_value: string
           last_used_at: string | null
           name: string
+          paused_reason: string | null
+          paused_until: string | null
           payment_id: string | null
           payment_status: string | null
           price_ksh: number | null
+          status: Database["public"]["Enums"]["api_key_status"] | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
+          api_key_type?: Database["public"]["Enums"]["api_key_type"] | null
           created_at?: string
+          created_by_admin?: boolean | null
           duration: Database["public"]["Enums"]["api_key_duration"]
           expires_at?: string | null
           id?: string
@@ -41,14 +88,20 @@ export type Database = {
           key_value: string
           last_used_at?: string | null
           name: string
+          paused_reason?: string | null
+          paused_until?: string | null
           payment_id?: string | null
           payment_status?: string | null
           price_ksh?: number | null
+          status?: Database["public"]["Enums"]["api_key_status"] | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
+          api_key_type?: Database["public"]["Enums"]["api_key_type"] | null
           created_at?: string
+          created_by_admin?: boolean | null
           duration?: Database["public"]["Enums"]["api_key_duration"]
           expires_at?: string | null
           id?: string
@@ -57,9 +110,12 @@ export type Database = {
           key_value?: string
           last_used_at?: string | null
           name?: string
+          paused_reason?: string | null
+          paused_until?: string | null
           payment_id?: string | null
           payment_status?: string | null
           price_ksh?: number | null
+          status?: Database["public"]["Enums"]["api_key_status"] | null
           updated_at?: string
           user_id?: string
         }
@@ -67,75 +123,82 @@ export type Database = {
       }
       payments: {
         Row: {
-          amount_ksh: number
-          api_key_id: string | null
+          amount: number
+          checkout_request_id: string | null
+          completed_at: string | null
           created_at: string
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          currency: string
           id: string
-          mpesa_checkout_request_id: string | null
+          merchant_request_id: string | null
           mpesa_receipt_number: string | null
-          payment_method: string
-          status: string
+          payment_type: string
+          phone_number: string
+          status: Database["public"]["Enums"]["payment_status"]
+          transaction_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          amount_ksh: number
-          api_key_id?: string | null
+          amount: number
+          checkout_request_id?: string | null
+          completed_at?: string | null
           created_at?: string
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          currency?: string
           id?: string
-          mpesa_checkout_request_id?: string | null
+          merchant_request_id?: string | null
           mpesa_receipt_number?: string | null
-          payment_method?: string
-          status?: string
+          payment_type: string
+          phone_number: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          transaction_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          amount_ksh?: number
-          api_key_id?: string | null
+          amount?: number
+          checkout_request_id?: string | null
+          completed_at?: string | null
           created_at?: string
-          duration?: Database["public"]["Enums"]["api_key_duration"]
+          currency?: string
           id?: string
-          mpesa_checkout_request_id?: string | null
+          merchant_request_id?: string | null
           mpesa_receipt_number?: string | null
-          payment_method?: string
-          status?: string
+          payment_type?: string
+          phone_number?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          transaction_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "payments_api_key_id_fkey"
-            columns: ["api_key_id"]
-            isOneToOne: false
-            referencedRelation: "api_keys"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
           created_at: string
           email: string
           id: string
+          role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           created_at?: string
           email: string
           id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -144,13 +207,80 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_api_key: {
+        Args: {
+          p_admin_notes?: string
+          p_custom_days?: number
+          p_duration_type: string
+          p_name: string
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
+      admin_get_all_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          api_keys: Json
+          created_at: string
+          email: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+          username: string
+        }[]
+      }
+      admin_manage_api_key: {
+        Args: {
+          p_action: string
+          p_api_key_id: string
+          p_pause_days?: number
+          p_pause_reason?: string
+        }
+        Returns: Json
+      }
       calculate_expiration_date: {
         Args: { duration_type: Database["public"]["Enums"]["api_key_duration"] }
         Returns: string
       }
+      create_trial_api_key: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      create_trial_for_user: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      fix_missing_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      is_admin: {
+        Args: { user_id?: string }
+        Returns: boolean
+      }
+      update_expired_api_keys: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      validate_payment_and_create_api_key: {
+        Args: {
+          p_payment_type: string
+          p_transaction_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
-      api_key_duration: "1_week" | "30_days" | "60_days" | "forever"
+      api_key_duration:
+        | "1_week"
+        | "30_days"
+        | "60_days"
+        | "forever"
+        | "trial_7_days"
+      api_key_status: "active" | "inactive" | "paused" | "expired"
+      api_key_type: "trial" | "paid"
+      payment_status: "pending" | "completed" | "failed" | "cancelled"
+      user_role: "user" | "admin" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -278,7 +408,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      api_key_duration: ["1_week", "30_days", "60_days", "forever"],
+      api_key_duration: [
+        "1_week",
+        "30_days",
+        "60_days",
+        "forever",
+        "trial_7_days",
+      ],
+      api_key_status: ["active", "inactive", "paused", "expired"],
+      api_key_type: ["trial", "paid"],
+      payment_status: ["pending", "completed", "failed", "cancelled"],
+      user_role: ["user", "admin", "super_admin"],
     },
   },
 } as const
