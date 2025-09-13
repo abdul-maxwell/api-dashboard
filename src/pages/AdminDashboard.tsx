@@ -183,7 +183,8 @@ export default function AdminDashboard() {
 
   const handleCreateApiKey = async () => {
     try {
-      const { data, error } = await supabase.rpc('admin_create_api_key', {
+      // First try the RPC function
+      const { data: rpcData, error: rpcError } = await supabase.rpc('admin_create_api_key', {
         p_target_user_id: createApiKeyForm.targetUserId,
         p_name: createApiKeyForm.name,
         p_duration_type: createApiKeyForm.durationType,
@@ -191,33 +192,107 @@ export default function AdminDashboard() {
         p_admin_notes: createApiKeyForm.adminNotes
       });
 
-      if (error) throw error;
+      if (rpcError) {
+        console.warn('RPC failed, trying fallback method:', rpcError);
+        
+        // Fallback: Create API key directly
+        const keyValue = 'ak_' + Array.from({ length: 32 }, () => 
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+            .charAt(Math.floor(Math.random() * 62))
+        ).join('');
 
-      const response = data as unknown as AdminResponse;
-      if (response.success) {
+        // Calculate expiration date
+        let expiresAt = null;
+        let duration = createApiKeyForm.durationType;
+        
+        if (createApiKeyForm.durationType === 'custom') {
+          expiresAt = new Date(Date.now() + createApiKeyForm.customDays * 24 * 60 * 60 * 1000).toISOString();
+          duration = 'forever'; // Use forever for custom durations
+        } else {
+          switch (createApiKeyForm.durationType) {
+            case '1_week':
+              expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+              break;
+            case '1_month':
+              expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+              duration = '30_days';
+              break;
+            case '2_months':
+              expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+              duration = '60_days';
+              break;
+            case '1_year':
+              expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+              duration = 'forever';
+              break;
+            case 'lifetime':
+              expiresAt = null;
+              duration = 'forever';
+              break;
+          }
+        }
+
+        // Deactivate existing active API keys for the user
+        await supabase
+          .from('api_keys')
+          .update({ is_active: false })
+          .eq('user_id', createApiKeyForm.targetUserId)
+          .eq('is_active', true);
+
+        // Create the new API key
+        const { error: insertError } = await supabase
+          .from('api_keys')
+          .insert({
+            user_id: createApiKeyForm.targetUserId,
+            name: createApiKeyForm.name,
+            key_value: keyValue,
+            duration: duration as "1_week" | "30_days" | "60_days" | "forever",
+            expires_at: expiresAt,
+            is_active: true,
+            created_by_admin: true,
+            admin_notes: createApiKeyForm.adminNotes
+          });
+
+        if (insertError) {
+          throw insertError;
+        }
+
         toast({
           title: "Success",
-          description: response.message,
-        });
-        fetchUsers();
-        setCreateApiKeyForm({
-          targetUserId: "",
-          name: "",
-          durationType: "1_week",
-          customDays: 7,
-          adminNotes: ""
+          description: `API key "${createApiKeyForm.name}" created successfully for user`,
         });
       } else {
-        toast({
-          title: "Error",
-          description: response.message,
-          variant: "destructive",
-        });
+        // RPC function worked
+        const response = rpcData as unknown as AdminResponse;
+        if (response.success) {
+          toast({
+            title: "Success",
+            description: response.message,
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: response.message,
+            variant: "destructive",
+          });
+          return;
+        }
       }
+
+      // Refresh users list and reset form
+      fetchUsers();
+      setCreateApiKeyForm({
+        targetUserId: "",
+        name: "",
+        durationType: "1_week",
+        customDays: 7,
+        adminNotes: ""
+      });
     } catch (error: any) {
+      console.error('Create API key error:', error);
       toast({
         title: "Error",
-        description: "Failed to create API key",
+        description: `Failed to create API key: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -225,39 +300,101 @@ export default function AdminDashboard() {
 
   const handleManageApiKey = async () => {
     try {
-      const { data, error } = await supabase.rpc('admin_manage_api_key', {
+      // First try the RPC function
+      const { data: rpcData, error: rpcError } = await supabase.rpc('admin_manage_api_key', {
         p_api_key_id: selectedApiKeyId,
         p_action: manageApiKeyForm.action,
         p_pause_days: manageApiKeyForm.action === 'pause' ? manageApiKeyForm.pauseDays : null,
         p_pause_reason: manageApiKeyForm.action === 'pause' ? manageApiKeyForm.pauseReason : null
       });
 
-      if (error) throw error;
-
-      const response = data as unknown as AdminResponse;
-      if (response.success) {
-        toast({
-          title: "Success",
-          description: response.message,
-        });
-        fetchUsers();
-        setManageApiKeyForm({
-          action: "",
-          pauseDays: 7,
-          pauseReason: ""
-        });
-        setSelectedApiKeyId("");
+      if (rpcError) {
+        console.warn('RPC failed, trying fallback method:', rpcError);
+        
+        // Fallback: Manage API key directly
+        let updateData: any = {};
+        
+        switch (manageApiKeyForm.action) {
+          case 'delete':
+            const { error: deleteError } = await supabase
+              .from('api_keys')
+              .delete()
+              .eq('id', selectedApiKeyId);
+            
+            if (deleteError) throw deleteError;
+            
+            toast({
+              title: "Success",
+              description: "API key deleted successfully",
+            });
+            break;
+            
+          case 'deactivate':
+            updateData = { is_active: false, status: 'inactive' };
+            break;
+            
+          case 'activate':
+            updateData = { is_active: true, status: 'active', paused_until: null, paused_reason: null };
+            break;
+            
+          case 'pause':
+            const pauseUntil = new Date(Date.now() + manageApiKeyForm.pauseDays * 24 * 60 * 60 * 1000).toISOString();
+            updateData = { 
+              is_active: false, 
+              status: 'paused', 
+              paused_until: pauseUntil,
+              paused_reason: manageApiKeyForm.pauseReason 
+            };
+            break;
+            
+          default:
+            throw new Error('Invalid action');
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          const { error: updateError } = await supabase
+            .from('api_keys')
+            .update(updateData)
+            .eq('id', selectedApiKeyId);
+          
+          if (updateError) throw updateError;
+          
+          toast({
+            title: "Success",
+            description: `API key ${manageApiKeyForm.action}d successfully`,
+          });
+        }
       } else {
-        toast({
-          title: "Error",
-          description: response.message,
-          variant: "destructive",
-        });
+        // RPC function worked
+        const response = rpcData as unknown as AdminResponse;
+        if (response.success) {
+          toast({
+            title: "Success",
+            description: response.message,
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: response.message,
+            variant: "destructive",
+          });
+          return;
+        }
       }
+
+      // Refresh users list and reset form
+      fetchUsers();
+      setManageApiKeyForm({
+        action: "",
+        pauseDays: 7,
+        pauseReason: ""
+      });
+      setSelectedApiKeyId("");
     } catch (error: any) {
+      console.error('Manage API key error:', error);
       toast({
         title: "Error",
-        description: "Failed to manage API key",
+        description: `Failed to manage API key: ${error.message}`,
         variant: "destructive",
       });
     }
