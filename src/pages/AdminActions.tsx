@@ -25,6 +25,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SupportChatbot from "@/components/chat/SupportChatbot";
+import CreateUserDialog from "@/components/dashboard/CreateUserDialog";
 
 interface SystemStats {
   totalUsers: number;
@@ -186,14 +187,24 @@ export default function AdminActions() {
           description: "Browse and manage user accounts",
           icon: Users,
           onClick: () => navigate('/admin'),
-          available: true
+          available: true,
+          isDialog: false
+        },
+        {
+          title: "Create New User",
+          description: "Add new users to the system",
+          icon: Users,
+          onClick: () => {}, // Will be handled by the dialog
+          available: true,
+          isDialog: true
         },
         {
           title: "Bulk User Actions",
           description: "Perform actions on multiple users",
           icon: Users,
           onClick: () => toast({ title: "Coming Soon", description: "Bulk user actions will be available soon" }),
-          available: false
+          available: false,
+          isDialog: false
         }
       ]
     },
@@ -209,14 +220,16 @@ export default function AdminActions() {
           description: "Generate new API keys for users",
           icon: Key,
           onClick: () => navigate('/admin'),
-          available: true
+          available: true,
+          isDialog: false
         },
         {
           title: "Bulk Key Operations",
           description: "Manage multiple API keys at once",
           icon: Key,
           onClick: () => toast({ title: "Coming Soon", description: "Bulk key operations will be available soon" }),
-          available: false
+          available: false,
+          isDialog: false
         }
       ]
     },
@@ -232,14 +245,16 @@ export default function AdminActions() {
           description: "Send messages to users",
           icon: Bell,
           onClick: () => navigate('/admin'),
-          available: true
+          available: true,
+          isDialog: false
         },
         {
           title: "Notification Templates",
           description: "Create reusable notification templates",
           icon: FileText,
           onClick: () => toast({ title: "Coming Soon", description: "Notification templates will be available soon" }),
-          available: false
+          available: false,
+          isDialog: false
         }
       ]
     },
@@ -255,21 +270,24 @@ export default function AdminActions() {
           description: "Deactivate expired API keys",
           icon: Trash2,
           onClick: () => handleBulkAction('cleanup_expired'),
-          available: true
+          available: true,
+          isDialog: false
         },
         {
           title: "Cleanup Old Notifications",
           description: "Remove old read notifications",
           icon: Trash2,
           onClick: () => handleBulkAction('cleanup_notifications'),
-          available: true
+          available: true,
+          isDialog: false
         },
         {
           title: "Refresh Statistics",
           description: "Update system statistics",
           icon: RefreshCw,
           onClick: () => handleBulkAction('refresh_stats'),
-          available: true
+          available: true,
+          isDialog: false
         }
       ]
     },
@@ -285,14 +303,16 @@ export default function AdminActions() {
           description: "Review system security settings",
           icon: Shield,
           onClick: () => toast({ title: "Coming Soon", description: "Security audit will be available soon" }),
-          available: false
+          available: false,
+          isDialog: false
         },
         {
           title: "Activity Logs",
           description: "View system activity and logs",
           icon: Activity,
           onClick: () => toast({ title: "Coming Soon", description: "Activity logs will be available soon" }),
-          available: false
+          available: false,
+          isDialog: false
         }
       ]
     },
@@ -308,14 +328,16 @@ export default function AdminActions() {
           description: "View system usage statistics",
           icon: BarChart3,
           onClick: () => toast({ title: "Coming Soon", description: "Usage analytics will be available soon" }),
-          available: false
+          available: false,
+          isDialog: false
         },
         {
           title: "Export Data",
           description: "Export system data and reports",
           icon: Download,
           onClick: () => toast({ title: "Coming Soon", description: "Data export will be available soon" }),
-          available: false
+          available: false,
+          isDialog: false
         }
       ]
     }
@@ -428,22 +450,27 @@ export default function AdminActions() {
               <CardContent>
                 <div className="space-y-2">
                   {category.actions.map((action, actionIndex) => (
-                    <Button
-                      key={actionIndex}
-                      variant={action.available ? "default" : "outline"}
-                      size="sm"
-                      className="w-full justify-start gap-2"
-                      onClick={action.onClick}
-                      disabled={!action.available}
-                    >
-                      <action.icon className="h-4 w-4" />
-                      {action.title}
-                      {!action.available && (
-                        <Badge variant="secondary" className="ml-auto text-xs">
-                          Soon
-                        </Badge>
+                    <div key={actionIndex}>
+                      {action.isDialog && action.available ? (
+                        <CreateUserDialog onUserCreated={fetchSystemStats} />
+                      ) : (
+                        <Button
+                          variant={action.available ? "default" : "outline"}
+                          size="sm"
+                          className="w-full justify-start gap-2"
+                          onClick={action.onClick}
+                          disabled={!action.available}
+                        >
+                          <action.icon className="h-4 w-4" />
+                          {action.title}
+                          {!action.available && (
+                            <Badge variant="secondary" className="ml-auto text-xs">
+                              Soon
+                            </Badge>
+                          )}
+                        </Button>
                       )}
-                    </Button>
+                    </div>
                   ))}
                 </div>
               </CardContent>
