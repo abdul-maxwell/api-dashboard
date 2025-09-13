@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import DeleteUserDialog from "@/components/dashboard/DeleteUserDialog";
+import SendNotificationDialog from "@/components/dashboard/SendNotificationDialog";
 
 interface User {
   user_id: string;
@@ -510,6 +511,10 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
+                <SendNotificationDialog 
+                  users={users} 
+                  onNotificationSent={fetchUsers}
+                />
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button size="sm" className="gap-1">
