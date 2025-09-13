@@ -69,8 +69,8 @@ export default function TransactionManagement({ onTransactionUpdated }: Transact
 
   // Filters
   const [filters, setFilters] = useState({
-    status: '',
-    type: '',
+    status: 'all',
+    type: 'all',
     search: '',
     limit: 50,
     offset: 0
@@ -93,8 +93,8 @@ export default function TransactionManagement({ onTransactionUpdated }: Transact
       const { data, error } = await supabase.rpc('admin_get_all_transactions', {
         p_limit: filters.limit,
         p_offset: filters.offset,
-        p_status: filters.status || null,
-        p_type: filters.type || null,
+        p_status: filters.status === 'all' ? null : filters.status,
+        p_type: filters.type === 'all' ? null : filters.type,
         p_user_id: null
       });
 
@@ -274,7 +274,7 @@ export default function TransactionManagement({ onTransactionUpdated }: Transact
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="attempted">Attempted</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="processing">Processing</SelectItem>
@@ -291,7 +291,7 @@ export default function TransactionManagement({ onTransactionUpdated }: Transact
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="payment">Payment</SelectItem>
               <SelectItem value="refund">Refund</SelectItem>
               <SelectItem value="subscription">Subscription</SelectItem>

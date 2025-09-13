@@ -55,7 +55,7 @@ export default function AdminLogin() {
         title: "Access Granted",
         description: "Welcome to the admin panel",
       });
-      navigate("/admin");
+      navigate("/admin/dashboard");
     } catch (error: any) {
       toast({
         title: "Error",

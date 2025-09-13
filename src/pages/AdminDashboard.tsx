@@ -19,7 +19,7 @@ import EditUserDialog from "@/components/dashboard/EditUserDialog";
 import ResetUserPasswordDialog from "@/components/dashboard/ResetUserPasswordDialog";
 import TestEmailDialog from "@/components/dashboard/TestEmailDialog";
 import SupportChatbot from "@/components/chat/SupportChatbot";
-import TransactionManagement from "@/components/dashboard/TransactionManagement";
+// import TransactionManagement from "@/components/dashboard/TransactionManagement";
 
 interface User {
   user_id: string;
@@ -581,7 +581,7 @@ export default function AdminDashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate('/admin/actions')}
+                    onClick={() => navigate('/admin/dashboard/actions')}
                     className="gap-1"
                   >
                     <Wrench className="h-3 w-3" />
@@ -874,8 +874,8 @@ export default function AdminDashboard() {
           onConfirmDelete={handleDeleteUser}
         />
         
-        {/* Transaction Management */}
-        <TransactionManagement onTransactionUpdated={fetchUsers} />
+        {/* Transaction Management - Temporarily disabled */}
+        {/* <TransactionManagement onTransactionUpdated={fetchUsers} /> */}
         
         {/* Support Chatbot */}
         <SupportChatbot userId={user?.id} isAdmin={true} />
