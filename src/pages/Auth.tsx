@@ -8,30 +8,44 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check if user has a username
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (profile?.username) {
-          navigate("/");
-        } else {
-          navigate("/username-setup");
+    // Handle OAuth callback
+    const handleAuthCallback = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Session error:', error);
+          return;
         }
+
+        if (data.session) {
+          console.log('Session found, checking username...');
+          // Check if user has a username
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('user_id', data.session.user.id)
+            .single();
+
+          if (profile?.username) {
+            console.log('User has username, redirecting to dashboard');
+            navigate("/");
+          } else {
+            console.log('User has no username, redirecting to username setup');
+            navigate("/username-setup");
+          }
+        }
+      } catch (error) {
+        console.error('Error handling auth callback:', error);
       }
     };
 
-    checkUser();
+    handleAuthCallback();
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+        
         if (session) {
           // Handle Google OAuth users - ensure they have a profile
           if (session.user.app_metadata?.provider === 'google') {
@@ -58,15 +72,20 @@ export default function Auth() {
           }
           
           // Check if user has a username after authentication
-          const { data: profile } = await supabase
+          console.log('Checking if user has username...');
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('username')
             .eq('user_id', session.user.id)
             .single();
 
+          console.log('Profile check result:', { profile, profileError });
+
           if (profile?.username) {
+            console.log('User has username, redirecting to dashboard');
             navigate("/");
           } else {
+            console.log('User has no username, redirecting to username setup');
             navigate("/username-setup");
           }
         }
