@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, Key, Activity, Clock, Gift, Sparkles, Crown, CreditCard } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ApiKeyCard from "./ApiKeyCard";
-import CreateApiKeyDialog from "./CreateApiKeyDialog";
 import PaymentDialog from "./PaymentDialog";
+import ClaimTrialDialog from "./ClaimTrialDialog";
 
 interface Profile {
   email: string;
@@ -118,6 +118,7 @@ export default function Dashboard() {
   const expiredKeys = apiKeys.filter(key => key.expires_at && new Date(key.expires_at) <= new Date());
   const trialKeys = apiKeys.filter(key => key.is_trial);
   const paidKeys = apiKeys.filter(key => !key.is_trial && key.payment_status === 'completed');
+  const hasEverHadTrial = trialKeys.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-secondary animate-fade-in">
@@ -198,8 +199,11 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-poppins font-bold">API Keys</h2>
             <div className="flex gap-3">
-              <CreateApiKeyDialog onApiKeyCreated={fetchApiKeys} />
-              <PaymentDialog onPaymentInitiated={fetchApiKeys} />
+              {!hasEverHadTrial && apiKeys.length === 0 ? (
+                <ClaimTrialDialog onTrialClaimed={fetchApiKeys} />
+              ) : (
+                <PaymentDialog onPaymentInitiated={fetchApiKeys} />
+              )}
             </div>
           </div>
 
@@ -209,13 +213,16 @@ export default function Dashboard() {
             </div>
           ) : apiKeys.length === 0 ? (
             <Card>
-              <CardContent className="text-center py-8">
-                <Key className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No API Keys</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first API key to get started with ZETECH MD BOT
+              <CardContent className="text-center py-12">
+                <Gift className="h-16 w-16 text-primary mx-auto mb-6" />
+                <h3 className="text-2xl font-poppins font-bold mb-4">Welcome to ZETECH MD BOT!</h3>
+                <p className="text-muted-foreground mb-6 text-lg">
+                  Get started with your free 7-day trial and experience the power of our AI bot.
                 </p>
-                <CreateApiKeyDialog onApiKeyCreated={fetchApiKeys} />
+                <ClaimTrialDialog onTrialClaimed={fetchApiKeys} />
+                <p className="text-sm text-muted-foreground mt-4">
+                  No payment required • Full access • Cancel anytime
+                </p>
               </CardContent>
             </Card>
           ) : (
