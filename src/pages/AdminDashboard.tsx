@@ -17,6 +17,7 @@ import SendNotificationDialog from "@/components/dashboard/SendNotificationDialo
 import CreateUserDialog from "@/components/dashboard/CreateUserDialog";
 import EditUserDialog from "@/components/dashboard/EditUserDialog";
 import ResetUserPasswordDialog from "@/components/dashboard/ResetUserPasswordDialog";
+import TestEmailDialog from "@/components/dashboard/TestEmailDialog";
 import SupportChatbot from "@/components/chat/SupportChatbot";
 
 interface User {
@@ -529,6 +530,7 @@ export default function AdminDashboard() {
                     Advanced Actions
                   </Button>
                   <CreateUserDialog onUserCreated={fetchUsers} />
+                  <TestEmailDialog />
                   <SendNotificationDialog 
                     users={users} 
                     onNotificationSent={fetchUsers}

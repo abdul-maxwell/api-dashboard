@@ -26,6 +26,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import SupportChatbot from "@/components/chat/SupportChatbot";
 import CreateUserDialog from "@/components/dashboard/CreateUserDialog";
+import EmailDiagnostics from "@/components/dashboard/EmailDiagnostics";
 
 interface SystemStats {
   totalUsers: number;
@@ -430,6 +431,11 @@ export default function AdminActions() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Email Diagnostics */}
+        <div className="mb-6">
+          <EmailDiagnostics />
         </div>
 
         {/* Action Categories */}

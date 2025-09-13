@@ -172,28 +172,36 @@ export default function AuthForm() {
     setIsResettingPassword(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      console.log('Attempting to send password reset email to:', resetEmail);
+      console.log('Redirect URL:', `${window.location.origin}/reset-password`);
+      
+      const { data, error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
+      console.log('Password reset response:', { data, error });
+
       if (error) {
+        console.error('Password reset error:', error);
         toast({
           title: "Reset failed",
-          description: error.message,
+          description: `Error: ${error.message}. Please check your email address or try again later.`,
           variant: "destructive",
         });
       } else {
+        console.log('Password reset email sent successfully');
         toast({
           title: "Reset email sent",
-          description: "Check your email for password reset instructions.",
+          description: "Check your email for password reset instructions. If you don't see it, check your spam folder.",
         });
         setShowResetPassword(false);
         setResetEmail("");
       }
     } catch (error) {
+      console.error('Unexpected error during password reset:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred. Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
