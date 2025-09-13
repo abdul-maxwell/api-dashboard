@@ -321,6 +321,25 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_create_user: {
+        Args: {
+          p_email: string
+          p_username: string
+          p_password: string
+          p_role?: string
+        }
+        Returns: Json
+      }
+      admin_update_user: {
+        Args: {
+          p_user_id: string
+          p_email: string
+          p_username: string
+          p_role: string
+          p_new_password?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       api_key_duration:

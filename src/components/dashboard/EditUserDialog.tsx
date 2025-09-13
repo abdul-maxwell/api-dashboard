@@ -96,49 +96,36 @@ export default function EditUserDialog({ user, onUserUpdated }: EditUserDialogPr
 
     setIsLoading(true);
     try {
-      // Update user in Supabase Auth
-      const updateData: any = {
-        email: form.email,
-        user_metadata: {
-          username: form.username
-        }
-      };
-
-      // Only update password if provided
-      if (form.newPassword) {
-        updateData.password = form.newPassword;
-      }
-
-      const { error: authError } = await supabase.auth.admin.updateUserById(
-        user.user_id,
-        updateData
-      );
-
-      if (authError) {
-        throw authError;
-      }
-
-      // Update profile record
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          email: form.email,
-          username: form.username,
-          role: form.role
-        })
-        .eq('user_id', user.user_id);
-
-      if (profileError) {
-        throw profileError;
-      }
-
-      toast({
-        title: "User Updated Successfully",
-        description: `User ${form.username} has been updated`,
+      // Use the database function to update user
+      const { data, error } = await supabase.rpc('admin_update_user', {
+        p_user_id: user.user_id,
+        p_email: form.email,
+        p_username: form.username,
+        p_role: form.role,
+        p_new_password: form.newPassword || null
       });
 
-      setOpen(false);
-      onUserUpdated();
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      const response = data as any;
+      if (response.success) {
+        toast({
+          title: "User Updated Successfully",
+          description: `User ${form.username} has been updated`,
+        });
+
+        setOpen(false);
+        onUserUpdated();
+      } else {
+        toast({
+          title: "Error Updating User",
+          description: response.message || "Failed to update user",
+          variant: "destructive",
+        });
+      }
 
     } catch (error: any) {
       console.error('Update user error:', error);

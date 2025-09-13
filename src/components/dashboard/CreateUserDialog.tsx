@@ -73,55 +73,43 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
 
     setIsLoading(true);
     try {
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: form.email,
-        password: form.password,
-        email_confirm: true, // Auto-confirm email for admin-created users
-        user_metadata: {
-          username: form.username
-        }
+      // Use the database function to create user profile
+      const { data, error } = await supabase.rpc('admin_create_user', {
+        p_email: form.email,
+        p_username: form.username,
+        p_password: form.password,
+        p_role: form.role
       });
 
-      if (authError) {
-        throw authError;
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
       }
 
-      if (!authData.user) {
-        throw new Error("Failed to create user");
-      }
-
-      // Create profile record
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: authData.user.id,
-          email: form.email,
-          username: form.username,
-          role: form.role
+      const response = data as any;
+      if (response.success) {
+        toast({
+          title: "User Profile Created",
+          description: `User profile for ${form.username} (${form.email}) has been created. The user can now sign up with these credentials.`,
         });
 
-      if (profileError) {
-        // If profile creation fails, try to clean up the auth user
-        await supabase.auth.admin.deleteUser(authData.user.id);
-        throw profileError;
+        // Reset form and close dialog
+        setForm({
+          email: "",
+          username: "",
+          password: "",
+          confirmPassword: "",
+          role: 'user'
+        });
+        setOpen(false);
+        onUserCreated();
+      } else {
+        toast({
+          title: "Error Creating User",
+          description: response.message || "Failed to create user",
+          variant: "destructive",
+        });
       }
-
-      toast({
-        title: "User Created Successfully",
-        description: `User ${form.username} (${form.email}) has been created with ${form.role} role`,
-      });
-
-      // Reset form and close dialog
-      setForm({
-        email: "",
-        username: "",
-        password: "",
-        confirmPassword: "",
-        role: 'user'
-      });
-      setOpen(false);
-      onUserCreated();
 
     } catch (error: any) {
       console.error('Create user error:', error);
@@ -166,7 +154,7 @@ export default function CreateUserDialog({ onUserCreated }: CreateUserDialogProp
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
           <DialogDescription>
-            Create a new user account with email, username, and role
+            Create a new user profile. The user will need to sign up with the provided email and password to activate their account.
           </DialogDescription>
         </DialogHeader>
         
