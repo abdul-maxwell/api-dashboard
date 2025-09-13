@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Bell, BellRing, Info, AlertTriangle, CheckCircle, AlertCircle, X, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Notification {
   id: string;
@@ -25,46 +26,51 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Mock notifications for demonstration
-  const mockNotifications: Notification[] = [
-    {
-      id: '1',
-      title: 'API Key Expiring Soon',
-      message: 'Your API key "Premium Access" will expire in 3 days. Please renew to avoid service interruption.',
-      type: 'warning',
-      priority: 'high',
-      isRead: false,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-    },
-    {
-      id: '2',
-      title: 'Welcome to ZETECH MD BOT!',
-      message: 'Thank you for joining our platform. Your free trial has been activated and you can start using our services immediately.',
-      type: 'success',
-      priority: 'medium',
-      isRead: true,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-      readAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '3',
-      title: 'System Maintenance',
-      message: 'We will be performing scheduled maintenance on our servers tomorrow from 2:00 AM to 4:00 AM UTC. Services may be temporarily unavailable.',
-      type: 'info',
-      priority: 'medium',
-      isRead: false,
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-    },
-  ];
-
   useEffect(() => {
-    // Simulate loading notifications
     const loadNotifications = async () => {
+      if (!userId) return;
+      
       setLoading(true);
-      // In a real app, you would fetch from your API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setNotifications(mockNotifications);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading notifications:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load notifications",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Transform the data to match our interface
+        const transformedNotifications: Notification[] = (data || []).map(notification => ({
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          priority: notification.priority,
+          isRead: notification.is_read,
+          createdAt: notification.created_at,
+          readAt: notification.read_at
+        }));
+
+        setNotifications(transformedNotifications);
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load notifications",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadNotifications();
@@ -112,42 +118,100 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
   };
 
   const markAsRead = async (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, isRead: true, readAt: new Date().toISOString() }
-          : notification
-      )
-    );
-    
-    toast({
-      title: "Notification marked as read",
-      description: "The notification has been marked as read",
-    });
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ 
+          is_read: true, 
+          read_at: new Date().toISOString() 
+        })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, isRead: true, readAt: new Date().toISOString() }
+            : notification
+        )
+      );
+      
+      toast({
+        title: "Notification marked as read",
+        description: "The notification has been marked as read",
+      });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read",
+        variant: "destructive",
+      });
+    }
   };
 
   const markAllAsRead = async () => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        !notification.isRead 
-          ? { ...notification, isRead: true, readAt: new Date().toISOString() }
-          : notification
-      )
-    );
-    
-    toast({
-      title: "All notifications marked as read",
-      description: "All notifications have been marked as read",
-    });
+    try {
+      const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
+      
+      if (unreadIds.length === 0) return;
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ 
+          is_read: true, 
+          read_at: new Date().toISOString() 
+        })
+        .in('id', unreadIds);
+
+      if (error) throw error;
+
+      setNotifications(prev => 
+        prev.map(notification => 
+          !notification.isRead 
+            ? { ...notification, isRead: true, readAt: new Date().toISOString() }
+            : notification
+        )
+      );
+      
+      toast({
+        title: "All notifications marked as read",
+        description: "All notifications have been marked as read",
+      });
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read",
+        variant: "destructive",
+      });
+    }
   };
 
   const deleteNotification = async (notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    
-    toast({
-      title: "Notification deleted",
-      description: "The notification has been deleted",
-    });
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      
+      toast({
+        title: "Notification deleted",
+        description: "The notification has been deleted",
+      });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notification",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!isOpen) {

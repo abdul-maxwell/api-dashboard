@@ -510,18 +510,19 @@ export default function AdminDashboard() {
               <Settings className="h-5 w-5 text-warning" />
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
-                <SendNotificationDialog 
-                  users={users} 
-                  onNotificationSent={fetchUsers}
-                />
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="gap-1">
-                      <Plus className="h-3 w-3" />
-                      Create API Key
-                    </Button>
-                  </DialogTrigger>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <div className="flex gap-2 min-w-max">
+                  <SendNotificationDialog 
+                    users={users} 
+                    onNotificationSent={fetchUsers}
+                  />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-1">
+                        <Plus className="h-3 w-3" />
+                        Create API Key
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Create API Key</DialogTitle>
@@ -602,7 +603,8 @@ export default function AdminDashboard() {
                       </Button>
                     </div>
                   </DialogContent>
-                </Dialog>
+                  </Dialog>
+                </div>
               </div>
             </CardContent>
           </Card>

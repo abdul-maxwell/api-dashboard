@@ -31,6 +31,7 @@ interface ApiKey {
 }
 
 export default function Dashboard() {
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,8 @@ export default function Dashboard() {
     try {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) return;
+
+      setUser(user);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -174,7 +177,7 @@ export default function Dashboard() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <NotificationCenter userId={profile?.email || ''} />
+            <NotificationCenter userId={user?.id || ''} />
             <Button variant="outline" onClick={handleSignOut} className="gap-2 transition-smooth hover:shadow-[var(--shadow-card)]">
               <LogOut className="h-4 w-4" />
               Sign Out

@@ -202,6 +202,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: string
+          priority: string
+          is_read: boolean
+          read_at: string | null
+          created_at: string
+          created_by_admin: boolean
+          admin_user_id: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message: string
+          type?: string
+          priority?: string
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+          created_by_admin?: boolean
+          admin_user_id?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string
+          type?: string
+          priority?: string
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+          created_by_admin?: boolean
+          admin_user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -266,6 +308,16 @@ export type Database = {
           p_payment_type: string
           p_transaction_id: string
           p_user_id: string
+        }
+        Returns: Json
+      }
+      send_notification: {
+        Args: {
+          p_user_id: string
+          p_title: string
+          p_message: string
+          p_type?: string
+          p_priority?: string
         }
         Returns: Json
       }

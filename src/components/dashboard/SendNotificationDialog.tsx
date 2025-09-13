@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bell, Send, User, AlertCircle, Info, CheckCircle, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   user_id: string;
@@ -63,32 +64,52 @@ export default function SendNotificationDialog({ users, onNotificationSent }: Se
 
     setIsLoading(true);
     try {
-      // For now, we'll simulate sending a notification
-      // In a real implementation, you would call an API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const selectedUser = users.find(user => user.user_id === form.targetUserId);
-      
-      toast({
-        title: "Notification Sent",
-        description: `Notification sent successfully to ${selectedUser?.email}`,
+      // Call the database function to send notification
+      const { data, error } = await supabase.rpc('send_notification', {
+        p_user_id: form.targetUserId,
+        p_title: form.title,
+        p_message: form.message,
+        p_type: form.type,
+        p_priority: form.priority
       });
 
-      // Reset form
-      setForm({
-        targetUserId: "",
-        title: "",
-        message: "",
-        type: 'info',
-        priority: 'medium'
-      });
-      
-      setOpen(false);
-      onNotificationSent();
+      if (error) {
+        console.error('RPC error:', error);
+        throw error;
+      }
+
+      const response = data as any;
+      if (response.success) {
+        const selectedUser = users.find(user => user.user_id === form.targetUserId);
+        
+        toast({
+          title: "Notification Sent",
+          description: `Notification sent successfully to ${selectedUser?.email}`,
+        });
+
+        // Reset form
+        setForm({
+          targetUserId: "",
+          title: "",
+          message: "",
+          type: 'info',
+          priority: 'medium'
+        });
+        
+        setOpen(false);
+        onNotificationSent();
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to send notification",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
+      console.error('Send notification error:', error);
       toast({
         title: "Error",
-        description: "Failed to send notification",
+        description: `Failed to send notification: ${error.message}`,
         variant: "destructive",
       });
     } finally {
