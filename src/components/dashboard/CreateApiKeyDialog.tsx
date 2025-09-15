@@ -69,6 +69,8 @@ export default function CreateApiKeyDialog({ onApiKeyCreated }: CreateApiKeyDial
           duration: duration as "1_week" | "30_days" | "60_days" | "forever",
           expires_at: expiresAt,
           is_active: true,
+          is_trial: true, // This is a trial API key created directly by user
+          payment_status: "completed", // Trial keys are considered "completed"
         });
 
       if (error) {

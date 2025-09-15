@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Shield, Users, Key, Plus, Pause, Play, Trash2, Settings, Wrench } from "lucide-react";
+import { LogOut, Shield, Users, Key, Plus, Pause, Play, Trash2, Settings, Wrench, Package, Tag } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,9 @@ import EditUserDialog from "@/components/dashboard/EditUserDialog";
 import ResetUserPasswordDialog from "@/components/dashboard/ResetUserPasswordDialog";
 import TestEmailDialog from "@/components/dashboard/TestEmailDialog";
 import SupportChatbot from "@/components/chat/SupportChatbot";
-// import TransactionManagement from "@/components/dashboard/TransactionManagement";
+import TransactionManagement from "@/components/dashboard/TransactionManagement";
+import PackageManagement from "@/components/dashboard/admin/PackageManagement";
+import DiscountManagement from "@/components/dashboard/admin/DiscountManagement";
 
 interface User {
   user_id: string;
@@ -72,6 +74,7 @@ export default function AdminDashboard() {
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>("");
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState('users');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -319,6 +322,8 @@ export default function AdminDashboard() {
             duration: duration as "1_week" | "30_days" | "60_days" | "forever",
             expires_at: expiresAt,
             is_active: true,
+            is_trial: false, // Admin-created keys are not trials
+            payment_status: "completed", // Admin-created keys are considered "completed"
             created_by_admin: true,
             admin_notes: createApiKeyForm.adminNotes
           });
@@ -533,7 +538,7 @@ export default function AdminDashboard() {
             <h1 className="text-4xl font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
               Admin Dashboard
             </h1>
-            <p className="text-muted-foreground text-lg">Manage users and API keys</p>
+            <p className="text-muted-foreground text-lg">Manage users, packages, and discounts</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
@@ -541,8 +546,47 @@ export default function AdminDashboard() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-bounce-in">
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 mb-8 bg-muted p-1 rounded-lg w-fit">
+          <Button
+            variant={activeTab === 'users' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('users')}
+            className="gap-2"
+          >
+            <Users className="h-4 w-4" />
+            Users & API Keys
+          </Button>
+          <Button
+            variant={activeTab === 'packages' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('packages')}
+            className="gap-2"
+          >
+            <Package className="h-4 w-4" />
+            Packages
+          </Button>
+          <Button
+            variant={activeTab === 'discounts' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('discounts')}
+            className="gap-2"
+          >
+            <Tag className="h-4 w-4" />
+            Discounts
+          </Button>
+          <Button
+            variant={activeTab === 'transactions' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('transactions')}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Transactions
+          </Button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'users' && (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-bounce-in">
           <Card className="card-hover transition-smooth">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium font-poppins">Total Users</CardTitle>
@@ -866,16 +910,27 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Delete User Confirmation Dialog */}
-        <DeleteUserDialog
-          open={deleteUserDialogOpen}
-          onOpenChange={setDeleteUserDialogOpen}
-          user={userToDelete}
-          onConfirmDelete={handleDeleteUser}
-        />
-        
-        {/* Transaction Management - Temporarily disabled */}
-        {/* <TransactionManagement onTransactionUpdated={fetchUsers} /> */}
+            {/* Delete User Confirmation Dialog */}
+            <DeleteUserDialog
+              open={deleteUserDialogOpen}
+              onOpenChange={setDeleteUserDialogOpen}
+              user={userToDelete}
+              onConfirmDelete={handleDeleteUser}
+            />
+          </>
+        )}
+
+        {activeTab === 'packages' && (
+          <PackageManagement />
+        )}
+
+        {activeTab === 'discounts' && (
+          <DiscountManagement />
+        )}
+
+        {activeTab === 'transactions' && (
+          <TransactionManagement onTransactionUpdated={fetchUsers} />
+        )}
         
         {/* Support Chatbot */}
         <SupportChatbot userId={user?.id} isAdmin={true} />

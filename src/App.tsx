@@ -10,6 +10,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminActions from "./pages/AdminActions";
+import TransactionsHistory from "./pages/TransactionsHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/username-setup" element={<UsernameSetup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/transactions" element={<TransactionsHistory />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/dashboard/actions" element={<AdminActions />} />

@@ -268,4 +268,206 @@ export class TransactionService {
       metadata: originalTransactionId ? { originalTransactionId } : null
     });
   }
+
+  /**
+   * Get user's transactions
+   */
+  static async getUserTransactions(
+    limit: number = 50,
+    offset: number = 0,
+    status?: string,
+    type?: string
+  ) {
+    try {
+      console.log('Getting user transactions:', { limit, offset, status, type });
+      
+      const { data, error } = await supabase.rpc('get_user_transactions', {
+        p_limit: limit,
+        p_offset: offset,
+        p_status: status || null,
+        p_type: type || null
+      });
+
+      if (error) {
+        console.error('Error getting user transactions:', error);
+        throw error;
+      }
+
+      const result = data as any;
+      if (result.success) {
+        console.log('User transactions retrieved successfully:', result);
+        return result;
+      } else {
+        throw new Error(result.message || 'Failed to get user transactions');
+      }
+    } catch (error) {
+      console.error('TransactionService.getUserTransactions error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get transaction by checkout request ID
+   */
+  static async getTransactionByCheckoutId(checkoutRequestId: string) {
+    try {
+      console.log('Getting transaction by checkout ID:', checkoutRequestId);
+      
+      const { data, error } = await supabase.rpc('get_transaction_by_checkout_id', {
+        p_checkout_request_id: checkoutRequestId
+      });
+
+      if (error) {
+        console.error('Error getting transaction by checkout ID:', error);
+        throw error;
+      }
+
+      const result = data as any;
+      if (result.success) {
+        console.log('Transaction retrieved successfully:', result);
+        return result;
+      } else {
+        throw new Error(result.message || 'Failed to get transaction');
+      }
+    } catch (error) {
+      console.error('TransactionService.getTransactionByCheckoutId error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Query transaction status from M-Pesa
+   */
+  static async queryTransactionStatus(checkoutRequestId: string) {
+    try {
+      console.log('Querying transaction status:', checkoutRequestId);
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/query-transaction-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          checkout_request_id: checkoutRequestId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Transaction status query result:', result);
+      return result;
+    } catch (error) {
+      console.error('TransactionService.queryTransactionStatus error:', error);
+      throw error;
+    }
+  }
+
+  // Package Management
+  static async getPackages(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+      return [];
+    }
+  }
+
+  // Discount Management
+  static async validatePromoCode(promoCode: string, packageId: string, userId: string): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('discounts')
+        .select('*')
+        .eq('promo_code', promoCode.toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        return { valid: false, message: 'Invalid promo code' };
+      }
+
+      // Check if discount is still valid
+      const now = new Date();
+      const validFrom = new Date(data.valid_from);
+      const validUntil = data.valid_until ? new Date(data.valid_until) : null;
+
+      if (validFrom > now || (validUntil && validUntil < now)) {
+        return { valid: false, message: 'Promo code has expired' };
+      }
+
+      // Check usage limits
+      if (data.usage_limit > 0 && data.usage_count >= data.usage_limit) {
+        return { valid: false, message: 'Promo code usage limit reached' };
+      }
+
+      // Check if applicable to this package
+      if (data.applicable_packages.length > 0 && !data.applicable_packages.includes(packageId)) {
+        return { valid: false, message: 'Promo code not applicable to this package' };
+      }
+
+      // Check user usage limit
+      const { data: userUsage, error: usageError } = await supabase
+        .from('user_discount_usage')
+        .select('usage_count')
+        .eq('user_id', userId)
+        .eq('discount_id', data.id)
+        .single();
+
+      if (!usageError && userUsage && userUsage.usage_count >= data.user_limit) {
+        return { valid: false, message: 'You have reached the usage limit for this promo code' };
+      }
+
+      return { valid: true, discount: data };
+    } catch (error) {
+      console.error('Error validating promo code:', error);
+      return { valid: false, message: 'Error validating promo code' };
+    }
+  }
+
+  static async applyPromoCode(promoCode: string, packageId: string, userId: string, originalPrice: number): Promise<any> {
+    try {
+      const validation = await this.validatePromoCode(promoCode, packageId, userId);
+      
+      if (!validation.valid) {
+        return validation;
+      }
+
+      const discount = validation.discount;
+      let discountAmount = 0;
+      let finalPrice = originalPrice;
+
+      if (discount.discount_type === 'percentage') {
+        discountAmount = (originalPrice * discount.discount_value) / 100;
+        if (discount.max_discount > 0 && discountAmount > discount.max_discount) {
+          discountAmount = discount.max_discount;
+        }
+      } else {
+        discountAmount = discount.discount_value;
+      }
+
+      finalPrice = Math.max(0, originalPrice - discountAmount);
+
+      return {
+        valid: true,
+        discount,
+        discountAmount,
+        finalPrice,
+        originalPrice
+      };
+    } catch (error) {
+      console.error('Error applying promo code:', error);
+      return { valid: false, message: 'Error applying promo code' };
+    }
+  }
 }

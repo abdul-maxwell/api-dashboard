@@ -315,6 +315,198 @@ export type Database = {
           }
         ]
       }
+      packages: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          duration: string
+          duration_days: number
+          price_ksh: number
+          original_price_ksh: number | null
+          is_active: boolean
+          is_featured: boolean
+          sort_order: number
+          features: Json
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          duration: string
+          duration_days: number
+          price_ksh: number
+          original_price_ksh?: number | null
+          is_active?: boolean
+          is_featured?: boolean
+          sort_order?: number
+          features?: Json
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          duration?: string
+          duration_days?: number
+          price_ksh?: number
+          original_price_ksh?: number | null
+          is_active?: boolean
+          is_featured?: boolean
+          sort_order?: number
+          features?: Json
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      discounts: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          promo_code: string
+          discount_type: string
+          discount_value: number
+          min_amount: number
+          max_discount: number | null
+          usage_limit: number | null
+          usage_count: number
+          user_limit: number
+          is_active: boolean
+          valid_from: string
+          valid_until: string | null
+          applicable_packages: string[]
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          promo_code: string
+          discount_type: string
+          discount_value: number
+          min_amount?: number
+          max_discount?: number | null
+          usage_limit?: number | null
+          usage_count?: number
+          user_limit?: number
+          is_active?: boolean
+          valid_from?: string
+          valid_until?: string | null
+          applicable_packages?: string[]
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          promo_code?: string
+          discount_type?: string
+          discount_value?: number
+          min_amount?: number
+          max_discount?: number | null
+          usage_limit?: number | null
+          usage_count?: number
+          user_limit?: number
+          is_active?: boolean
+          valid_from?: string
+          valid_until?: string | null
+          applicable_packages?: string[]
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discounts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user_discount_usage: {
+        Row: {
+          id: string
+          user_id: string
+          discount_id: string
+          usage_count: number
+          first_used_at: string
+          last_used_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          discount_id: string
+          usage_count?: number
+          first_used_at?: string
+          last_used_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          discount_id?: string
+          usage_count?: number
+          first_used_at?: string
+          last_used_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_discount_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_discount_usage_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -473,6 +665,25 @@ export type Database = {
           p_status?: string
           p_type?: string
           p_user_id?: string
+        }
+        Returns: Json
+      }
+      get_user_transactions: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_type?: string
+        }
+        Returns: Json
+      }
+      cleanup_expired_transactions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_transaction_by_checkout_id: {
+        Args: {
+          p_checkout_request_id: string
         }
         Returns: Json
       }

@@ -63,6 +63,7 @@ export default function ClaimTrialDialog({ onTrialClaimed }: ClaimTrialDialogPro
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           is_active: true,
           is_trial: true,
+          payment_status: "completed", // Trial keys are considered "completed"
         });
 
       if (error) {

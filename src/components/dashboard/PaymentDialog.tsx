@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Smartphone, Clock, Zap, Crown, Infinity } from "lucide-react";
+import { CreditCard, Smartphone, Clock, Zap, Crown, Infinity, Package, Star, CheckCircle, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { TransactionService } from "@/lib/transactionService";
+import PaymentVerificationDialog from "./PaymentVerificationDialog";
 
 interface PaymentDialogProps {
   onPaymentInitiated: () => void;
@@ -59,9 +61,43 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
   const [apiKeyName, setApiKeyName] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const { toast } = useToast();
 
-  const selectedPlanData = pricingPlans.find(plan => plan.duration === selectedPlan);
+  // Payment verification state
+  const [showVerification, setShowVerification] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    checkoutRequestId: string;
+    transactionId: string;
+    amount: number;
+    currency: string;
+    phoneNumber: string;
+    apiKeyName: string;
+    duration: string;
+  } | null>(null);
+
+  const selectedPlanData = packages.find(pkg => pkg.duration === selectedPlan);
+
+  useEffect(() => {
+    fetchPackages();
+  }, []);
+
+  const fetchPackages = async () => {
+    try {
+      const packagesData = await TransactionService.getPackages();
+      setPackages(packagesData);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load packages. Using default pricing.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +160,7 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
 
       const { data } = response;
       
-      if (data.success) {
+      if (data && data.success) {
         // Update transaction status to pending (optional)
         try {
           await TransactionService.updateTransaction({
@@ -136,18 +172,41 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
           console.warn('Transaction status update failed:', trackingError);
         }
 
-        toast({
-          title: "Payment Initiated! 🎉",
-          description: "Check your phone for the M-Pesa prompt. Your API key will be activated once payment is confirmed.",
+        // Show verification popup
+        setPaymentData({
+          checkoutRequestId: data.checkout_request_id,
+          transactionId: data.transaction_id || transactionId,
+          amount: appliedDiscount ? appliedDiscount.finalPrice : (selectedPlanData?.price_ksh || 0),
+          currency: 'KES',
+          phoneNumber,
+          apiKeyName,
+          duration: selectedPlan
         });
         
         setIsOpen(false);
+        setShowVerification(true);
+        
+        // Clear form
         setPhoneNumber("");
         setSelectedPlan("");
         setApiKeyName("");
-        onPaymentInitiated();
       } else {
-        throw new Error("Payment initiation failed");
+        // Handle failed payment response
+        const errorMessage = data?.error || "Payment initiation failed";
+        
+        // Track payment failure if we have a transaction ID
+        if (data?.transaction_id) {
+          try {
+            await TransactionService.trackPaymentFailure(
+              data.transaction_id,
+              errorMessage
+            );
+          } catch (trackingError) {
+            console.warn('Failed to track payment failure:', trackingError);
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
     } catch (error: any) {
       console.error("Payment error:", error);
@@ -173,7 +232,89 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
     }
   };
 
+  const handlePaymentSuccess = () => {
+    toast({
+      title: "🎉 Payment Successful!",
+      description: "Your API key has been activated successfully!",
+    });
+    setShowVerification(false);
+    setPaymentData(null);
+    onPaymentInitiated();
+  };
+
+  const handleRetryPayment = () => {
+    setShowVerification(false);
+    setPaymentData(null);
+    setIsOpen(true);
+  };
+
+  const handleCloseVerification = () => {
+    setShowVerification(false);
+    setPaymentData(null);
+  };
+
+  const handlePromoCodeValidation = async () => {
+    if (!promoCode.trim() || !selectedPlan) {
+      toast({
+        title: "Error",
+        description: "Please select a plan and enter a promo code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsValidatingPromo(true);
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "User not authenticated",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = await TransactionService.applyPromoCode(
+        promoCode,
+        selectedPlanData?.id || '',
+        user.id,
+        selectedPlanData?.price_ksh || 0
+      );
+
+      if (result.valid) {
+        setAppliedDiscount(result);
+        toast({
+          title: "Success!",
+          description: `Promo code applied! You saved ${new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(result.discountAmount)}`,
+        });
+      } else {
+        setAppliedDiscount(null);
+        toast({
+          title: "Invalid Promo Code",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error validating promo code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to validate promo code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
+  const removePromoCode = () => {
+    setPromoCode("");
+    setAppliedDiscount(null);
+  };
+
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="btn-glow bg-gradient-primary border-0 font-poppins font-semibold">
@@ -196,41 +337,111 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
           <div className="space-y-4">
             <Label className="text-lg font-poppins font-semibold">Choose Your Plan</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {pricingPlans.map((plan) => {
-                const Icon = plan.icon;
-                return (
-                  <Card
-                    key={plan.duration}
-                    className={`cursor-pointer transition-smooth card-hover ${
-                      selectedPlan === plan.duration
-                        ? "ring-2 ring-primary shadow-[var(--shadow-elegant)]"
-                        : "hover:shadow-[var(--shadow-card)]"
-                    } ${plan.bgColor}`}
-                    onClick={() => setSelectedPlan(plan.duration)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-lg ${plan.bgColor}`}>
-                            <Icon className={`w-5 h-5 ${plan.color}`} />
-                          </div>
-                          <div>
-                            <h3 className="font-poppins font-semibold">{plan.label}</h3>
-                            <p className="text-sm text-muted-foreground">{plan.description}</p>
-                          </div>
+              {packages.length > 0 ? packages.map((pkg) => (
+                <Card
+                  key={pkg.id}
+                  className={`cursor-pointer transition-smooth card-hover ${
+                    selectedPlan === pkg.duration
+                      ? "ring-2 ring-primary shadow-[var(--shadow-elegant)]"
+                      : "hover:shadow-[var(--shadow-card)]"
+                  } ${pkg.is_featured ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}
+                  onClick={() => setSelectedPlan(pkg.duration)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${pkg.is_featured ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
+                          {pkg.is_featured ? <Crown className="w-5 h-5 text-yellow-600" /> : <Zap className="w-5 h-5 text-blue-600" />}
                         </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-primary">KSh {plan.price}</div>
-                          {plan.duration === "forever" && (
-                            <div className="text-xs text-muted-foreground">One-time</div>
-                          )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-poppins font-semibold">{pkg.name}</h3>
+                            {pkg.is_featured && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Star className="h-3 w-3 mr-1" />
+                                Featured
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{pkg.description}</p>
+                          <p className="text-xs text-muted-foreground">{pkg.duration.replace('_', ' ')} • {pkg.duration_days} days</p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      <div className="text-right">
+                        <div className="flex items-center gap-2">
+                          {pkg.original_price_ksh > pkg.price_ksh && (
+                            <span className="text-sm text-muted-foreground line-through">
+                              KSh {pkg.original_price_ksh}
+                            </span>
+                          )}
+                          <div className="text-xl font-bold text-primary">KSh {pkg.price_ksh}</div>
+                        </div>
+                        {pkg.original_price_ksh > pkg.price_ksh && (
+                          <Badge variant="destructive" className="text-xs mt-1">
+                            -{Math.round(((pkg.original_price_ksh - pkg.price_ksh) / pkg.original_price_ksh) * 100)}% OFF
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )) : (
+                <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4" />
+                  <p>Loading packages...</p>
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Promo Code */}
+          <div className="space-y-4">
+            <Label htmlFor="promo">Promo Code (Optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="promo"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="Enter promo code"
+                disabled={isValidatingPromo}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePromoCodeValidation}
+                disabled={isValidatingPromo || !promoCode.trim()}
+              >
+                {isValidatingPromo ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                ) : (
+                  "Apply"
+                )}
+              </Button>
+            </div>
+            {appliedDiscount && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Promo code applied: {appliedDiscount.discount.name}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removePromoCode}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                  You saved {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(appliedDiscount.discountAmount)}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* API Key Name */}
@@ -272,13 +483,33 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
           {selectedPlanData && (
             <div className="bg-gradient-secondary p-4 rounded-lg border animate-fade-in">
               <h4 className="font-poppins font-semibold text-lg mb-2">Payment Summary</h4>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">
-                  {selectedPlanData.label} API Key Access
-                </span>
-                <span className="font-bold text-xl text-primary">
-                  KSh {selectedPlanData.price}
-                </span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">
+                    {selectedPlanData.name} API Key Access
+                  </span>
+                  <span className="font-bold text-lg text-primary">
+                    KSh {selectedPlanData.price_ksh}
+                  </span>
+                </div>
+                {appliedDiscount && (
+                  <>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Discount ({appliedDiscount.discount.name})</span>
+                      <span className="text-green-600 font-medium">
+                        -KSh {appliedDiscount.discountAmount}
+                      </span>
+                    </div>
+                    <div className="border-t pt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">Total</span>
+                        <span className="font-bold text-xl text-primary">
+                          KSh {appliedDiscount.finalPrice}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -313,5 +544,23 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Payment Verification Dialog */}
+    {paymentData && (
+      <PaymentVerificationDialog
+        isOpen={showVerification}
+        onClose={handleCloseVerification}
+        checkoutRequestId={paymentData.checkoutRequestId}
+        transactionId={paymentData.transactionId}
+        amount={paymentData.amount}
+        currency={paymentData.currency}
+        phoneNumber={paymentData.phoneNumber}
+        apiKeyName={paymentData.apiKeyName}
+        duration={paymentData.duration}
+        onPaymentSuccess={handlePaymentSuccess}
+        onRetry={handleRetryPayment}
+      />
+    )}
+    </>
   );
 }

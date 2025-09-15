@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Key, Activity, Clock, Gift, Sparkles, Crown, CreditCard } from "lucide-react";
+import { LogOut, Key, Activity, Clock, Gift, Sparkles, Crown, CreditCard, History } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import ApiKeyCard from "./ApiKeyCard";
 import PaymentDialog from "./PaymentDialog";
@@ -32,6 +33,7 @@ interface ApiKey {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -179,6 +181,14 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
             <NotificationCenter userId={user?.id || ''} />
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/transactions")} 
+              className="gap-2 transition-smooth hover:shadow-[var(--shadow-card)]"
+            >
+              <History className="h-4 w-4" />
+              Transactions
+            </Button>
             <Button variant="outline" onClick={handleSignOut} className="gap-2 transition-smooth hover:shadow-[var(--shadow-card)]">
               <LogOut className="h-4 w-4" />
               Sign Out
