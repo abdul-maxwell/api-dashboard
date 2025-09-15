@@ -83,7 +83,7 @@ export default function CreateApiKeyDialog({ onApiKeyCreated }: CreateApiKeyDial
       });
 
       setName("");
-      setDuration("");
+      setDuration("1_week");
       setOpen(false);
       onApiKeyCreated();
     } catch (error: any) {

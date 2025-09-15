@@ -53,11 +53,11 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
           id: notification.id,
           title: notification.title,
           message: notification.message,
-          type: notification.type,
-          priority: notification.priority,
+          type: notification.type as 'info' | 'warning' | 'success' | 'error',
+          priority: notification.priority as 'low' | 'medium' | 'high',
           isRead: notification.is_read,
           createdAt: notification.created_at,
-          readAt: notification.read_at
+          readAt: notification.created_at // Use created_at as fallback since read_at doesn't exist
         }));
 
         setNotifications(transformedNotifications);

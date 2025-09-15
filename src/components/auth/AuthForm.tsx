@@ -216,7 +216,6 @@ export default function AuthForm() {
     try {
       console.log('Attempting Google Sign-In...');
       console.log('Current origin:', window.location.origin);
-      console.log('Supabase URL:', supabase.supabaseUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

@@ -260,8 +260,7 @@ export default function AdminDashboard() {
       const { data: rpcData, error: rpcError } = await supabase.rpc('admin_create_api_key', {
         p_target_user_id: createApiKeyForm.targetUserId,
         p_name: createApiKeyForm.name,
-        p_duration_type: createApiKeyForm.durationType,
-        p_custom_days: createApiKeyForm.durationType === 'custom' ? createApiKeyForm.customDays : null,
+        p_duration: createApiKeyForm.durationType as "1_week" | "30_days" | "60_days" | "forever",
         p_admin_notes: createApiKeyForm.adminNotes
       });
 

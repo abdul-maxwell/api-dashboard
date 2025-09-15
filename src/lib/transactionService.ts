@@ -407,24 +407,23 @@ export class TransactionService {
       }
 
       // Check usage limits
-      if (data.usage_limit > 0 && data.usage_count >= data.usage_limit) {
+      if (data.usage_limit > 0 && (data as any).used_count >= data.usage_limit) {
         return { valid: false, message: 'Promo code usage limit reached' };
       }
 
       // Check if applicable to this package
-      if (data.applicable_packages.length > 0 && !data.applicable_packages.includes(packageId)) {
+      if (Array.isArray(data.applicable_packages) && data.applicable_packages.length > 0 && !data.applicable_packages.includes(packageId)) {
         return { valid: false, message: 'Promo code not applicable to this package' };
       }
 
       // Check user usage limit
       const { data: userUsage, error: usageError } = await supabase
         .from('user_discount_usage')
-        .select('usage_count')
+        .select('id')
         .eq('user_id', userId)
-        .eq('discount_id', data.id)
-        .single();
+        .eq('discount_id', data.id);
 
-      if (!usageError && userUsage && userUsage.usage_count >= data.user_limit) {
+      if (!usageError && userUsage && userUsage.length >= data.usage_limit) {
         return { valid: false, message: 'You have reached the usage limit for this promo code' };
       }
 
