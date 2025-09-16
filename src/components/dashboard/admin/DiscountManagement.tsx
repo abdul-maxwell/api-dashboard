@@ -359,8 +359,8 @@ function DiscountForm({ onSubmit, initialData }: {
     description: initialData?.description || '',
     discount_type: initialData?.discount_type || 'percentage',
     discount_value: initialData?.discount_value || 0,
-    max_uses: initialData?.max_uses || null,
-    expires_at: initialData?.expires_at || null,
+    max_uses: initialData?.usage_limit || null,
+    expires_at: initialData?.valid_until || null,
     is_active: initialData?.is_active ?? true
   });
 

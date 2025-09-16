@@ -112,6 +112,7 @@ export default function AuthForm() {
             description: "Invalid username or email",
             variant: "destructive",
           });
+          setIsLoading(false);
           return;
         }
 

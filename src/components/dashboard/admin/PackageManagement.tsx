@@ -110,7 +110,6 @@ export default function PackageManagement() {
         p_duration: packageData.duration,
         p_features: packageData.features,
         p_is_featured: packageData.is_featured,
-        p_is_popular: packageData.is_popular,
         p_sort_order: packageData.sort_order
       });
 
@@ -147,7 +146,6 @@ export default function PackageManagement() {
         p_duration: packageData.duration,
         p_features: packageData.features,
         p_is_featured: packageData.is_featured,
-        p_is_popular: packageData.is_popular,
         p_sort_order: packageData.sort_order
       });
 
@@ -368,7 +366,6 @@ function PackageForm({ onSubmit, initialData }: {
     duration: initialData?.duration || '30_days',
     features: initialData?.features || [],
     is_featured: initialData?.is_featured || false,
-    is_popular: initialData?.is_popular || false,
     sort_order: initialData?.sort_order || 0
   });
 
@@ -485,8 +482,8 @@ function PackageForm({ onSubmit, initialData }: {
           <div className="flex items-center space-x-2">
             <Switch
               id="is_popular"
-              checked={formData.is_popular}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_popular: checked })}
+              checked={formData.is_featured}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
             />
             <Label htmlFor="is_popular">Popular Package</Label>
           </div>
