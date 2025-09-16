@@ -63,7 +63,7 @@ export default function ResetUserPasswordDialog({
         p_email: userEmail,
         p_username: userName,
         p_role: 'user', // Keep existing role
-        p_new_password: newPassword
+        // p_new_password parameter removed as it doesn't exist in the function
       });
 
       if (error) {

@@ -110,13 +110,13 @@ export default function DiscountManagement() {
   const handleCreateDiscount = async (discountData: any) => {
     try {
       const { data, error } = await supabase.rpc('admin_create_discount', {
-        p_promo_code: discountData.promo_code,
+        p_code: discountData.promo_code,
         p_name: discountData.name,
         p_description: discountData.description,
         p_discount_type: discountData.discount_type,
         p_discount_value: discountData.discount_value,
         p_max_uses: discountData.max_uses,
-        p_expires_at: discountData.expires_at,
+        p_expiry_date: discountData.expires_at,
         p_is_active: discountData.is_active
       });
 
@@ -146,13 +146,13 @@ export default function DiscountManagement() {
     try {
       const { data, error } = await supabase.rpc('admin_update_discount', {
         p_discount_id: editingDiscount?.id,
-        p_promo_code: discountData.promo_code,
+        p_code: discountData.promo_code,
         p_name: discountData.name,
         p_description: discountData.description,
         p_discount_type: discountData.discount_type,
         p_discount_value: discountData.discount_value,
         p_max_uses: discountData.max_uses,
-        p_expires_at: discountData.expires_at,
+        p_expiry_date: discountData.expires_at,
         p_is_active: discountData.is_active
       });
 

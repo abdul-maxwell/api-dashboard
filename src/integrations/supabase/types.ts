@@ -549,6 +549,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_api_key: {
+        Args: {
+          p_admin_notes?: string
+          p_duration: string
+          p_name: string
+          p_price_ksh?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
       admin_create_discount: {
         Args: {
           p_code: string
@@ -625,6 +635,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: Json
       }
+      admin_manage_api_key: {
+        Args: { p_action: string; p_admin_notes?: string; p_api_key_id: string }
+        Returns: Json
+      }
       admin_reset_user_password: {
         Args: { p_new_password: string; p_user_id: string }
         Returns: Json
@@ -677,6 +691,10 @@ export type Database = {
         }
         Returns: Json
       }
+      calculate_expiration_date: {
+        Args: { p_duration: string }
+        Returns: string
+      }
       check_username_availability: {
         Args: { p_username: string }
         Returns: Json
@@ -689,6 +707,18 @@ export type Database = {
         Args:
           | Record<PropertyKey, never>
           | { p_email: string; p_username?: string }
+        Returns: Json
+      }
+      create_transaction: {
+        Args: {
+          p_amount: number
+          p_checkout_request_id?: string
+          p_currency?: string
+          p_description?: string
+          p_payment_method?: string
+          p_transaction_id: string
+          p_user_id: string
+        }
         Returns: Json
       }
       create_trial_for_user: {
@@ -753,6 +783,16 @@ export type Database = {
       update_expired_api_keys: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      update_transaction_status: {
+        Args: {
+          p_error_message?: string
+          p_mpesa_receipt_number?: string
+          p_status: string
+          p_success_message?: string
+          p_transaction_id: string
+        }
+        Returns: Json
       }
       validate_promo_code: {
         Args: { p_promo_code: string }

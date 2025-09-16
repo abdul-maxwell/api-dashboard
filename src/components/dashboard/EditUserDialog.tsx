@@ -102,7 +102,7 @@ export default function EditUserDialog({ user, onUserUpdated }: EditUserDialogPr
         p_email: form.email,
         p_username: form.username,
         p_role: form.role,
-        p_new_password: form.newPassword || null
+        // p_new_password parameter removed as it doesn't exist in the function
       });
 
       if (error) {

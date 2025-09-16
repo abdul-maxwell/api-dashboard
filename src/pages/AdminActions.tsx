@@ -89,11 +89,16 @@ export default function AdminActions() {
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false);
 
+      // Direct queries instead of using non-existent columns
+      const { data: apiKeysData } = await supabase
+        .from('api_keys')
+        .select('*');
+      
       const now = new Date();
-      const activeKeys = apiKeys?.filter(key => key.is_active && (!key.expires_at || new Date(key.expires_at) > now)) || [];
-      const expiredKeys = apiKeys?.filter(key => key.expires_at && new Date(key.expires_at) <= now) || [];
-      const trialKeys = apiKeys?.filter(key => key.is_trial) || [];
-      const paidKeys = apiKeys?.filter(key => !key.is_trial && key.payment_status === 'completed') || [];
+      const activeKeys = apiKeysData?.filter(key => key.is_active && (!key.expires_at || new Date(key.expires_at) > now)) || [];
+      const expiredKeys = apiKeysData?.filter(key => key.expires_at && new Date(key.expires_at) <= now) || [];
+      const trialKeys = apiKeysData?.filter(key => key.is_trial) || [];
+      const paidKeys = apiKeysData?.filter(key => !key.is_trial && key.price_ksh && key.price_ksh > 0) || [];
 
       setSystemStats({
         totalUsers: usersCount || 0,

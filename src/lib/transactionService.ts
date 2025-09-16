@@ -37,18 +37,11 @@ export class TransactionService {
       const { data, error } = await supabase.rpc('create_transaction', {
         p_user_id: params.userId,
         p_transaction_id: params.transactionId,
-        p_type: params.type,
-        p_status: params.status,
         p_amount: params.amount || null,
-        p_currency: params.currency || 'USD',
+        p_currency: params.currency || 'KES',
         p_description: params.description || null,
         p_payment_method: params.paymentMethod || null,
-        p_payment_provider: params.paymentProvider || null,
-        p_provider_transaction_id: params.providerTransactionId || null,
-        p_error_message: params.errorMessage || null,
-        p_success_message: params.successMessage || null,
-        p_metadata: params.metadata || null,
-        p_expires_at: params.expiresAt || null
+        // p_checkout_request_id removed as checkoutId doesn't exist in interface
       });
 
       if (error) {
@@ -85,8 +78,8 @@ export class TransactionService {
         p_status: params.status,
         p_error_message: params.errorMessage || null,
         p_success_message: params.successMessage || null,
-        p_provider_transaction_id: params.providerTransactionId || null,
-        p_metadata: params.metadata || null
+        // p_provider_transaction_id removed as it doesn't exist in the function
+        // p_metadata removed as it doesn't exist in the function
       });
 
       if (error) {

@@ -54,7 +54,7 @@ export default function NotificationCenter({ userId }: NotificationCenterProps) 
           title: notification.title,
           message: notification.message,
           type: notification.type as 'info' | 'warning' | 'success' | 'error',
-          priority: notification.priority as 'low' | 'medium' | 'high',
+          priority: 'medium' as 'low' | 'medium' | 'high', // Default since priority doesn't exist
           isRead: notification.is_read,
           createdAt: notification.created_at,
           readAt: notification.created_at // Use created_at as fallback since read_at doesn't exist

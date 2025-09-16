@@ -81,7 +81,7 @@ export default function Dashboard() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setApiKeys(data || []);
+      setApiKeys((data || []).map(key => ({ ...key, duration: '30_days' })));
 
       // Check if user has ever had a trial (including deleted ones)
       const trialKeys = data?.filter(key => key.is_trial) || [];

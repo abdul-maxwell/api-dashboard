@@ -108,6 +108,7 @@ export default function PackageManagement() {
         p_price_ksh: packageData.price_ksh,
         p_original_price_ksh: packageData.original_price_ksh,
         p_duration: packageData.duration,
+        p_duration_days: 30, // Default value
         p_features: packageData.features,
         p_is_featured: packageData.is_featured,
         p_sort_order: packageData.sort_order

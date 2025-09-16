@@ -134,7 +134,7 @@ export default function TransactionManagement({ onTransactionUpdated }: Transact
         p_status: updateForm.status,
         p_error_message: updateForm.error_message || null,
         p_success_message: updateForm.success_message || null,
-        p_provider_transaction_id: updateForm.provider_transaction_id || null
+        // p_provider_transaction_id removed as it doesn't exist in the function
       });
 
       if (error) {

@@ -258,7 +258,7 @@ export default function AdminDashboard() {
     try {
       // First try the RPC function
       const { data: rpcData, error: rpcError } = await supabase.rpc('admin_create_api_key', {
-        p_target_user_id: createApiKeyForm.targetUserId,
+        p_user_id: createApiKeyForm.targetUserId,
         p_name: createApiKeyForm.name,
         p_duration: createApiKeyForm.durationType as "1_week" | "30_days" | "60_days" | "forever",
         p_admin_notes: createApiKeyForm.adminNotes
@@ -378,8 +378,7 @@ export default function AdminDashboard() {
       const { data: rpcData, error: rpcError } = await supabase.rpc('admin_manage_api_key', {
         p_api_key_id: selectedApiKeyId,
         p_action: manageApiKeyForm.action,
-        p_pause_days: manageApiKeyForm.action === 'pause' ? manageApiKeyForm.pauseDays : null,
-        p_pause_reason: manageApiKeyForm.action === 'pause' ? manageApiKeyForm.pauseReason : null
+        p_admin_notes: manageApiKeyForm.action === 'pause' ? manageApiKeyForm.pauseReason : null
       });
 
       if (rpcError) {

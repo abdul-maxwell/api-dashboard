@@ -52,7 +52,7 @@ export default function CreateApiKeyDialog({ onApiKeyCreated }: CreateApiKeyDial
       let expiresAt = null;
       if (duration !== "forever") {
         const { data: expirationData, error: expirationError } = await supabase
-          .rpc('calculate_expiration_date', { duration_type: duration });
+          .rpc('calculate_expiration_date', { p_duration: duration });
         
         if (expirationError) {
           throw expirationError;
