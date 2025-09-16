@@ -14,210 +14,291 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_api_key_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_api_key_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_api_key_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           admin_notes: string | null
-          api_key_type: Database["public"]["Enums"]["api_key_type"] | null
           created_at: string
-          created_by_admin: boolean | null
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          created_by_admin: boolean
+          description: string | null
           expires_at: string | null
           id: string
           is_active: boolean
-          is_trial: boolean | null
+          is_trial: boolean
           key_value: string
           last_used_at: string | null
           name: string
+          paused_reason: string | null
+          paused_until: string | null
           payment_id: string | null
-          payment_status: string | null
           price_ksh: number | null
+          rate_limit_per_hour: number | null
+          status: string | null
           updated_at: string
+          usage_count: number | null
           user_id: string
         }
         Insert: {
           admin_notes?: string | null
-          api_key_type?: Database["public"]["Enums"]["api_key_type"] | null
           created_at?: string
-          created_by_admin?: boolean | null
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          created_by_admin?: boolean
+          description?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
-          is_trial?: boolean | null
+          is_trial?: boolean
           key_value: string
           last_used_at?: string | null
           name: string
+          paused_reason?: string | null
+          paused_until?: string | null
           payment_id?: string | null
-          payment_status?: string | null
           price_ksh?: number | null
+          rate_limit_per_hour?: number | null
+          status?: string | null
           updated_at?: string
+          usage_count?: number | null
           user_id: string
         }
         Update: {
           admin_notes?: string | null
-          api_key_type?: Database["public"]["Enums"]["api_key_type"] | null
           created_at?: string
-          created_by_admin?: boolean | null
-          duration?: Database["public"]["Enums"]["api_key_duration"]
+          created_by_admin?: boolean
+          description?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
-          is_trial?: boolean | null
+          is_trial?: boolean
           key_value?: string
           last_used_at?: string | null
           name?: string
+          paused_reason?: string | null
+          paused_until?: string | null
           payment_id?: string | null
-          payment_status?: string | null
           price_ksh?: number | null
+          rate_limit_per_hour?: number | null
+          status?: string | null
           updated_at?: string
+          usage_count?: number | null
           user_id?: string
         }
         Relationships: []
       }
       discounts: {
         Row: {
-          applicable_packages: Json | null
-          created_at: string
+          applicable_packages: string[] | null
+          code: string | null
+          created_at: string | null
+          created_by: string | null
+          current_uses: number | null
           description: string | null
           discount_type: string
           discount_value: number
+          expiry_date: string | null
           id: string
-          is_active: boolean
+          is_active: boolean | null
           max_discount: number | null
+          max_uses: number | null
           min_amount: number | null
           name: string
           promo_code: string
-          updated_at: string
+          updated_at: string | null
+          updated_by: string | null
           usage_limit: number | null
           used_count: number | null
-          valid_from: string
+          user_limit: number | null
+          valid_from: string | null
           valid_until: string | null
         }
         Insert: {
-          applicable_packages?: Json | null
-          created_at?: string
+          applicable_packages?: string[] | null
+          code?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_uses?: number | null
           description?: string | null
           discount_type: string
           discount_value: number
+          expiry_date?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           max_discount?: number | null
+          max_uses?: number | null
           min_amount?: number | null
           name: string
           promo_code: string
-          updated_at?: string
+          updated_at?: string | null
+          updated_by?: string | null
           usage_limit?: number | null
           used_count?: number | null
-          valid_from?: string
+          user_limit?: number | null
+          valid_from?: string | null
           valid_until?: string | null
         }
         Update: {
-          applicable_packages?: Json | null
-          created_at?: string
+          applicable_packages?: string[] | null
+          code?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_uses?: number | null
           description?: string | null
           discount_type?: string
           discount_value?: number
+          expiry_date?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           max_discount?: number | null
+          max_uses?: number | null
           min_amount?: number | null
           name?: string
           promo_code?: string
-          updated_at?: string
+          updated_at?: string | null
+          updated_by?: string | null
           usage_limit?: number | null
           used_count?: number | null
-          valid_from?: string
+          user_limit?: number | null
+          valid_from?: string | null
           valid_until?: string | null
         }
         Relationships: []
       }
       notifications: {
         Row: {
+          action_text: string | null
+          action_url: string | null
           created_at: string
           id: string
           is_read: boolean
           message: string
-          priority: string
+          metadata: Json | null
+          read_at: string | null
           title: string
           type: string
+          updated_at: string
           user_id: string
         }
         Insert: {
+          action_text?: string | null
+          action_url?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
           message: string
-          priority?: string
+          metadata?: Json | null
+          read_at?: string | null
           title: string
           type?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
+          action_text?: string | null
+          action_url?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
           message?: string
-          priority?: string
+          metadata?: Json | null
+          read_at?: string | null
           title?: string
           type?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
       packages: {
         Row: {
-          created_at: string
+          created_at: string | null
+          created_by: string | null
           current_uses: number | null
           description: string | null
           discount_percentage: number | null
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          duration: string | null
+          duration_days: number | null
           features: Json | null
           id: string
-          is_active: boolean
-          is_featured: boolean
+          is_active: boolean | null
+          is_featured: boolean | null
           is_popular: boolean | null
           max_uses: number | null
           name: string
           original_price_ksh: number | null
           price_ksh: number
           sort_order: number | null
-          updated_at: string
+          updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
+          created_by?: string | null
           current_uses?: number | null
           description?: string | null
           discount_percentage?: number | null
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          duration?: string | null
+          duration_days?: number | null
           features?: Json | null
           id?: string
-          is_active?: boolean
-          is_featured?: boolean
+          is_active?: boolean | null
+          is_featured?: boolean | null
           is_popular?: boolean | null
           max_uses?: number | null
           name: string
           original_price_ksh?: number | null
           price_ksh: number
           sort_order?: number | null
-          updated_at?: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
+          created_by?: string | null
           current_uses?: number | null
           description?: string | null
           discount_percentage?: number | null
-          duration?: Database["public"]["Enums"]["api_key_duration"]
+          duration?: string | null
+          duration_days?: number | null
           features?: Json | null
           id?: string
-          is_active?: boolean
-          is_featured?: boolean
+          is_active?: boolean | null
+          is_featured?: boolean | null
           is_popular?: boolean | null
           max_uses?: number | null
           name?: string
           original_price_ksh?: number | null
           price_ksh?: number
           sort_order?: number | null
-          updated_at?: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -225,40 +306,64 @@ export type Database = {
         Row: {
           amount_ksh: number
           api_key_id: string | null
-          created_at: string
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          created_at: string | null
+          error_message: string | null
+          expires_at: string | null
           id: string
+          metadata: Json | null
           mpesa_checkout_request_id: string | null
+          mpesa_customer_message: string | null
+          mpesa_merchant_request_id: string | null
           mpesa_receipt_number: string | null
+          mpesa_response_code: string | null
+          mpesa_response_description: string | null
           payment_method: string
-          status: string
-          updated_at: string
+          processed_at: string | null
+          success_message: string | null
+          transaction_id: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           amount_ksh: number
           api_key_id?: string | null
-          created_at?: string
-          duration: Database["public"]["Enums"]["api_key_duration"]
+          created_at?: string | null
+          error_message?: string | null
+          expires_at?: string | null
           id?: string
+          metadata?: Json | null
           mpesa_checkout_request_id?: string | null
+          mpesa_customer_message?: string | null
+          mpesa_merchant_request_id?: string | null
           mpesa_receipt_number?: string | null
+          mpesa_response_code?: string | null
+          mpesa_response_description?: string | null
           payment_method?: string
-          status?: string
-          updated_at?: string
+          processed_at?: string | null
+          success_message?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           amount_ksh?: number
           api_key_id?: string | null
-          created_at?: string
-          duration?: Database["public"]["Enums"]["api_key_duration"]
+          created_at?: string | null
+          error_message?: string | null
+          expires_at?: string | null
           id?: string
+          metadata?: Json | null
           mpesa_checkout_request_id?: string | null
+          mpesa_customer_message?: string | null
+          mpesa_merchant_request_id?: string | null
           mpesa_receipt_number?: string | null
+          mpesa_response_code?: string | null
+          mpesa_response_description?: string | null
           payment_method?: string
-          status?: string
-          updated_at?: string
+          processed_at?: string | null
+          success_message?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -269,97 +374,137 @@ export type Database = {
             referencedRelation: "api_keys"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           email: string
+          email_verified: boolean
+          first_name: string | null
           id: string
+          is_active: boolean
+          last_login_at: string | null
+          last_name: string | null
+          phone_number: string | null
+          phone_verified: boolean
           role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
-          user_id: string | null
+          user_id: string
           username: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           email: string
+          email_verified?: boolean
+          first_name?: string | null
           id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          last_name?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
-          user_id?: string | null
+          user_id: string
           username?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           email?: string
+          email_verified?: boolean
+          first_name?: string | null
           id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          last_name?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
           username?: string | null
         }
         Relationships: []
       }
       transactions: {
         Row: {
-          amount: number
-          created_at: string
-          currency: string
+          amount: number | null
+          checkout_request_id: string | null
+          created_at: string | null
+          currency: string | null
           description: string | null
           error_message: string | null
           expires_at: string | null
           id: string
           metadata: Json | null
-          payment_method: string
-          payment_provider: string
+          mpesa_receipt_number: string | null
+          payment_method: string | null
+          payment_provider: string | null
+          payment_reference: string | null
           processed_at: string | null
           provider_transaction_id: string | null
-          status: string
+          status: string | null
           success_message: string | null
           transaction_id: string
-          type: string
-          updated_at: string
+          transaction_type: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          amount: number
-          created_at?: string
-          currency?: string
+          amount?: number | null
+          checkout_request_id?: string | null
+          created_at?: string | null
+          currency?: string | null
           description?: string | null
           error_message?: string | null
           expires_at?: string | null
           id?: string
           metadata?: Json | null
-          payment_method?: string
-          payment_provider?: string
+          mpesa_receipt_number?: string | null
+          payment_method?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
           processed_at?: string | null
           provider_transaction_id?: string | null
-          status?: string
+          status?: string | null
           success_message?: string | null
           transaction_id: string
-          type?: string
-          updated_at?: string
+          transaction_type?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          amount?: number
-          created_at?: string
-          currency?: string
+          amount?: number | null
+          checkout_request_id?: string | null
+          created_at?: string | null
+          currency?: string | null
           description?: string | null
           error_message?: string | null
           expires_at?: string | null
           id?: string
           metadata?: Json | null
-          payment_method?: string
-          payment_provider?: string
+          mpesa_receipt_number?: string | null
+          payment_method?: string | null
+          payment_provider?: string | null
+          payment_reference?: string | null
           processed_at?: string | null
           provider_transaction_id?: string | null
-          status?: string
+          status?: string | null
           success_message?: string | null
           transaction_id?: string
-          type?: string
-          updated_at?: string
+          transaction_type?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -367,20 +512,26 @@ export type Database = {
       user_discount_usage: {
         Row: {
           discount_id: string
+          first_used_at: string | null
           id: string
-          used_at: string
+          last_used_at: string | null
+          usage_count: number | null
           user_id: string
         }
         Insert: {
           discount_id: string
+          first_used_at?: string | null
           id?: string
-          used_at?: string
+          last_used_at?: string | null
+          usage_count?: number | null
           user_id: string
         }
         Update: {
           discount_id?: string
+          first_used_at?: string | null
           id?: string
-          used_at?: string
+          last_used_at?: string | null
+          usage_count?: number | null
           user_id?: string
         }
         Relationships: [
@@ -398,53 +549,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_create_api_key: {
-        Args:
-          | {
-              p_admin_notes?: string
-              p_duration: Database["public"]["Enums"]["api_key_duration"]
-              p_expires_at?: string
-              p_name: string
-              p_target_user_id: string
-            }
-          | {
-              p_admin_notes?: string
-              p_duration: Database["public"]["Enums"]["api_key_duration"]
-              p_name: string
-              p_user_id: string
-            }
-        Returns: Json
-      }
       admin_create_discount: {
         Args: {
+          p_code: string
           p_description: string
           p_discount_type: string
           p_discount_value: number
-          p_expires_at?: string
-          p_is_active?: boolean
-          p_max_uses?: number
+          p_expiry_date: string
+          p_is_active: boolean
+          p_max_uses: number
           p_name: string
-          p_promo_code: string
         }
         Returns: Json
       }
       admin_create_package: {
         Args: {
           p_description: string
-          p_duration: Database["public"]["Enums"]["api_key_duration"]
-          p_features?: Json
-          p_is_featured?: boolean
-          p_is_popular?: boolean
+          p_duration: string
+          p_duration_days: number
+          p_features: string
+          p_is_featured: boolean
           p_name: string
           p_original_price_ksh: number
           p_price_ksh: number
-          p_sort_order?: number
+          p_sort_order: number
         }
         Returns: Json
       }
       admin_create_user: {
         Args: {
           p_email: string
+          p_first_name?: string
+          p_last_name?: string
           p_password: string
           p_role?: string
           p_username: string
@@ -461,15 +597,6 @@ export type Database = {
       }
       admin_delete_user: {
         Args: { p_user_id: string }
-        Returns: Json
-      }
-      admin_get_all_api_keys: {
-        Args: {
-          p_limit?: number
-          p_offset?: number
-          p_status?: string
-          p_user_id?: string
-        }
         Returns: Json
       }
       admin_get_all_transactions: {
@@ -494,17 +621,8 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
-      admin_get_transaction_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      admin_manage_api_key: {
-        Args: {
-          p_action: string
-          p_api_key_id: string
-          p_pause_days?: number
-          p_pause_reason?: string
-        }
+      admin_get_user_details: {
+        Args: { p_user_id: string }
         Returns: Json
       }
       admin_reset_user_password: {
@@ -513,37 +631,38 @@ export type Database = {
       }
       admin_update_discount: {
         Args: {
+          p_code: string
           p_description: string
           p_discount_id: string
           p_discount_type: string
           p_discount_value: number
-          p_expires_at?: string
-          p_is_active?: boolean
-          p_max_uses?: number
+          p_expiry_date: string
+          p_is_active: boolean
+          p_max_uses: number
           p_name: string
-          p_promo_code: string
         }
         Returns: Json
       }
       admin_update_package: {
         Args: {
           p_description: string
-          p_duration: Database["public"]["Enums"]["api_key_duration"]
-          p_features?: Json
-          p_is_featured?: boolean
-          p_is_popular?: boolean
+          p_duration: string
+          p_features: string
+          p_is_featured: boolean
           p_name: string
           p_original_price_ksh: number
           p_package_id: string
           p_price_ksh: number
-          p_sort_order?: number
+          p_sort_order: number
         }
         Returns: Json
       }
       admin_update_user: {
         Args: {
           p_email: string
-          p_new_password?: string
+          p_first_name?: string
+          p_is_active?: boolean
+          p_last_name?: string
           p_role: string
           p_user_id: string
           p_username: string
@@ -553,15 +672,10 @@ export type Database = {
       apply_promo_code: {
         Args: {
           p_original_price: number
-          p_package_id: string
           p_promo_code: string
           p_user_id: string
         }
         Returns: Json
-      }
-      calculate_expiration_date: {
-        Args: { duration_type: Database["public"]["Enums"]["api_key_duration"] }
-        Returns: string
       }
       check_username_availability: {
         Args: { p_username: string }
@@ -577,25 +691,6 @@ export type Database = {
           | { p_email: string; p_username?: string }
         Returns: Json
       }
-      create_transaction: {
-        Args: {
-          p_amount?: number
-          p_currency?: string
-          p_description?: string
-          p_error_message?: string
-          p_expires_at?: string
-          p_metadata?: Json
-          p_payment_method?: string
-          p_payment_provider?: string
-          p_provider_transaction_id?: string
-          p_status: string
-          p_success_message?: string
-          p_transaction_id: string
-          p_type: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
       create_trial_for_user: {
         Args: { p_user_id: string }
         Returns: Json
@@ -605,6 +700,10 @@ export type Database = {
         Returns: Json
       }
       fix_missing_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_discounts: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
@@ -630,7 +729,11 @@ export type Database = {
         Returns: Json
       }
       is_admin: {
-        Args: { p_user_id?: string }
+        Args: { user_id?: string }
+        Returns: boolean
+      }
+      is_admin_simple: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       link_profile_to_user: {
@@ -651,39 +754,35 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      update_transaction_status: {
-        Args: {
-          p_error_message?: string
-          p_metadata?: Json
-          p_provider_transaction_id?: string
-          p_status: string
-          p_success_message?: string
-          p_transaction_id: string
-        }
-        Returns: Json
-      }
-      validate_payment_and_create_api_key: {
-        Args: {
-          p_payment_type: string
-          p_transaction_id: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
       validate_promo_code: {
-        Args: { p_package_id?: string; p_promo_code: string; p_user_id: string }
+        Args: { p_promo_code: string }
         Returns: Json
       }
     }
     Enums: {
-      api_key_duration:
-        | "1_week"
-        | "30_days"
-        | "60_days"
-        | "forever"
-        | "trial_7_days"
+      api_key_duration: "1_week" | "30_days" | "60_days" | "forever"
       api_key_type: "trial" | "paid"
-      payment_status: "pending" | "completed" | "failed" | "cancelled"
+      payment_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "refunded"
+      transaction_status:
+        | "attempted"
+        | "pending"
+        | "processing"
+        | "success"
+        | "failed"
+        | "cancelled"
+        | "refunded"
+      transaction_type:
+        | "payment"
+        | "refund"
+        | "subscription"
+        | "trial"
+        | "api_usage"
       user_role: "user" | "admin" | "super_admin"
     }
     CompositeTypes: {
@@ -812,15 +911,32 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      api_key_duration: [
-        "1_week",
-        "30_days",
-        "60_days",
-        "forever",
-        "trial_7_days",
-      ],
+      api_key_duration: ["1_week", "30_days", "60_days", "forever"],
       api_key_type: ["trial", "paid"],
-      payment_status: ["pending", "completed", "failed", "cancelled"],
+      payment_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
+      transaction_status: [
+        "attempted",
+        "pending",
+        "processing",
+        "success",
+        "failed",
+        "cancelled",
+        "refunded",
+      ],
+      transaction_type: [
+        "payment",
+        "refund",
+        "subscription",
+        "trial",
+        "api_usage",
+      ],
       user_role: ["user", "admin", "super_admin"],
     },
   },

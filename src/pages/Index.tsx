@@ -42,8 +42,8 @@ const Index = () => {
       async (event, session) => {
         setUser(session?.user ?? null);
         
-        // If user is logged in, check if they have a username
-        if (session?.user) {
+        // Only check username for successful sign in events to avoid loops
+        if (event === 'SIGNED_IN' && session?.user) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('username')
@@ -61,7 +61,7 @@ const Index = () => {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (

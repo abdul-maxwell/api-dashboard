@@ -46,7 +46,7 @@ export default function Auth() {
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email);
         
-        if (session) {
+        if (session && event === 'SIGNED_IN') {
           // Handle Google OAuth users - ensure they have a profile
           if (session.user.app_metadata?.provider === 'google') {
             try {
