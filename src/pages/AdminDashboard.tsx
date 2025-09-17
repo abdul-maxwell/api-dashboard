@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Shield, Users, Key, Plus, Pause, Play, Trash2, Settings, Wrench, Package, Tag } from "lucide-react";
+import { LogOut, Shield, Users, Key, Plus, Pause, Play, Trash2, Settings, Wrench, Package, Tag, Copy, TestTube, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,12 @@ interface ManageApiKeyForm {
   pauseReason: string;
 }
 
+interface TestApiKeyForm {
+  apiKey: string;
+  isLoading: boolean;
+  result: any;
+}
+
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -75,6 +81,11 @@ export default function AdminDashboard() {
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('users');
+  const [testApiKeyForm, setTestApiKeyForm] = useState<TestApiKeyForm>({
+    apiKey: '',
+    isLoading: false,
+    result: null
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -318,11 +329,11 @@ export default function AdminDashboard() {
             user_id: createApiKeyForm.targetUserId,
             name: createApiKeyForm.name,
             key_value: keyValue,
-            duration: duration as "1_week" | "30_days" | "60_days" | "forever",
+            duration: duration,
             expires_at: expiresAt,
             is_active: true,
             is_trial: false, // Admin-created keys are not trials
-            payment_status: "completed", // Admin-created keys are considered "completed"
+            price_ksh: 0, // Admin-created keys are free
             created_by_admin: true,
             admin_notes: createApiKeyForm.adminNotes
           });
@@ -454,7 +465,7 @@ export default function AdminDashboard() {
           return;
         }
       }
-
+      
       // Refresh users list and reset form
       fetchUsers();
       setManageApiKeyForm({
@@ -470,6 +481,71 @@ export default function AdminDashboard() {
         description: `Failed to manage API key: ${error.message}`,
         variant: "destructive",
       });
+    }
+  };
+
+  const copyToClipboard = async (text: string, label: string = "Text") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: `${label} copied to clipboard`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTestApiKey = async () => {
+    if (!testApiKeyForm.apiKey.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an API key to test",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTestApiKeyForm(prev => ({ ...prev, isLoading: true, result: null }));
+
+    try {
+      const { data, error } = await supabase.functions.invoke('test-api-key', {
+        body: { api_key: testApiKeyForm.apiKey.trim() }
+      });
+
+      if (error) throw error;
+
+      setTestApiKeyForm(prev => ({ ...prev, result: data }));
+
+      if (data.success) {
+        toast({
+          title: data.exists ? "API Key Found" : "API Key Not Found",
+          description: data.exists 
+            ? `Key is ${data.valid ? 'valid and active' : 'invalid or inactive'}`
+            : "API key does not exist in the database",
+          variant: data.exists && data.valid ? "default" : "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('Test API key error:', error);
+      setTestApiKeyForm(prev => ({ 
+        ...prev, 
+        result: { 
+          success: false, 
+          message: error.message || 'Failed to test API key' 
+        }
+      }));
+      toast({
+        title: "Error",
+        description: `Failed to test API key: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setTestApiKeyForm(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -635,6 +711,113 @@ export default function AdminDashboard() {
                     users={users} 
                     onNotificationSent={fetchUsers}
                   />
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-1">
+                        <TestTube className="h-3 w-3" />
+                        Test API Key
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Test API Key</DialogTitle>
+                        <DialogDescription>
+                          Enter an API key to check its status and details
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="testApiKey">API Key</Label>
+                          <Textarea
+                            id="testApiKey"
+                            value={testApiKeyForm.apiKey}
+                            onChange={(e) => setTestApiKeyForm(prev => ({ ...prev, apiKey: e.target.value }))}
+                            placeholder="Paste API key here..."
+                            className="font-mono text-xs"
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleTestApiKey} 
+                          disabled={testApiKeyForm.isLoading}
+                          className="w-full"
+                        >
+                          {testApiKeyForm.isLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Testing...
+                            </>
+                          ) : (
+                            <>
+                              <TestTube className="h-4 w-4 mr-2" />
+                              Test API Key
+                            </>
+                          )}
+                        </Button>
+                        
+                        {testApiKeyForm.result && (
+                          <div className="mt-4 p-4 border rounded-lg">
+                            <div className="flex items-center gap-2 mb-3">
+                              {testApiKeyForm.result.success && testApiKeyForm.result.exists ? (
+                                testApiKeyForm.result.valid ? (
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                ) : (
+                                  <XCircle className="h-5 w-5 text-red-500" />
+                                )
+                              ) : (
+                                <AlertCircle className="h-5 w-5 text-orange-500" />
+                              )}
+                              <span className="font-semibold">
+                                {testApiKeyForm.result.success && testApiKeyForm.result.exists
+                                  ? testApiKeyForm.result.valid ? 'Valid API Key' : 'Invalid API Key'
+                                  : 'API Key Not Found'}
+                              </span>
+                            </div>
+                            
+                            {testApiKeyForm.result.success && testApiKeyForm.result.exists && (
+                              <div className="space-y-2 text-sm">
+                                <div><strong>Name:</strong> {testApiKeyForm.result.api_key_info.name}</div>
+                                <div><strong>Status:</strong> 
+                                  <Badge className={`ml-2 ${
+                                    testApiKeyForm.result.api_key_info.status === 'active' ? 'bg-green-500' :
+                                    testApiKeyForm.result.api_key_info.status === 'expired' ? 'bg-red-500' :
+                                    testApiKeyForm.result.api_key_info.status === 'paused' ? 'bg-yellow-500' :
+                                    'bg-gray-500'
+                                  }`}>
+                                    {testApiKeyForm.result.api_key_info.status}
+                                  </Badge>
+                                </div>
+                                <div><strong>Duration:</strong> {testApiKeyForm.result.api_key_info.duration?.replace('_', ' ')}</div>
+                                <div><strong>Trial:</strong> {testApiKeyForm.result.api_key_info.is_trial ? 'Yes' : 'No'}</div>
+                                <div><strong>Created:</strong> {new Date(testApiKeyForm.result.api_key_info.created_at).toLocaleDateString()}</div>
+                                <div><strong>Expires:</strong> {testApiKeyForm.result.api_key_info.expires_at 
+                                  ? new Date(testApiKeyForm.result.api_key_info.expires_at).toLocaleDateString() 
+                                  : 'Never'}
+                                </div>
+                                <div><strong>Last Used:</strong> {testApiKeyForm.result.api_key_info.last_used_at 
+                                  ? new Date(testApiKeyForm.result.api_key_info.last_used_at).toLocaleDateString() 
+                                  : 'Never'}
+                                </div>
+                                <div><strong>Usage Count:</strong> {testApiKeyForm.result.api_key_info.usage_count}</div>
+                                <div><strong>Price:</strong> KSH {testApiKeyForm.result.api_key_info.price_ksh}</div>
+                                {testApiKeyForm.result.api_key_info.user && (
+                                  <div><strong>User:</strong> {testApiKeyForm.result.api_key_info.user.email} ({testApiKeyForm.result.api_key_info.user.username})</div>
+                                )}
+                                {testApiKeyForm.result.api_key_info.admin_notes && (
+                                  <div><strong>Admin Notes:</strong> {testApiKeyForm.result.api_key_info.admin_notes}</div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {!testApiKeyForm.result.success && (
+                              <div className="text-red-600 text-sm">
+                                {testApiKeyForm.result.message}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button size="sm" className="gap-1">
@@ -813,7 +996,17 @@ export default function AdminDashboard() {
                             <TableRow key={apiKey.id}>
                               <TableCell>{apiKey.name}</TableCell>
                               <TableCell className="font-mono text-xs">
-                                {apiKey.key_value.substring(0, 20)}...
+                                <div className="flex items-center gap-2">
+                                  <span>{apiKey.key_value.substring(0, 20)}...</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => copyToClipboard(apiKey.key_value, 'API Key')}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </TableCell>
                               <TableCell>{apiKey.duration ? apiKey.duration.replace('_', ' ') : 'Unknown'}</TableCell>
                               <TableCell>
