@@ -815,7 +815,7 @@ export default function AdminDashboard() {
                               <TableCell className="font-mono text-xs">
                                 {apiKey.key_value.substring(0, 20)}...
                               </TableCell>
-                              <TableCell>{apiKey.duration.replace('_', ' ')}</TableCell>
+                              <TableCell>{apiKey.duration ? apiKey.duration.replace('_', ' ') : 'Unknown'}</TableCell>
                               <TableCell>
                                 {apiKey.expires_at 
                                   ? new Date(apiKey.expires_at).toLocaleDateString()
