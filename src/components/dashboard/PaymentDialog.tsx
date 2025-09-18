@@ -127,10 +127,10 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
         await TransactionService.trackPaymentAttempt(
           session.user.id,
           transactionId,
-          selectedPlanData?.price || 0,
+          selectedPlanData?.price_ksh || 0,
           'KES',
           'mpesa',
-          `Payment for ${selectedPlanData?.label} API key: ${apiKeyName}`
+          `Payment for ${selectedPlanData?.name} API key: ${apiKeyName}`
         );
       } catch (trackingError) {
         console.warn('Transaction tracking failed, continuing with payment:', trackingError);
@@ -139,7 +139,7 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
       const response = await supabase.functions.invoke("mpesa-payment", {
         body: {
           phone_number: phoneNumber,
-          amount: selectedPlanData?.price,
+          amount: selectedPlanData?.price_ksh,
           duration: selectedPlan,
           api_key_name: apiKeyName,
           transaction_id: transactionId, // Pass transaction ID to the function
