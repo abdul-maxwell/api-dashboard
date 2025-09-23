@@ -13,54 +13,102 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get initial session
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      
-      // If user is logged in, check if they have a username
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('user_id', session.user.id)
-          .single();
+    let mounted = true;
+    let sessionChecked = false;
 
-        if (!profile?.username) {
-          navigate("/username-setup");
+    // Get initial session with retry logic
+    const getSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+          if (mounted) {
+            setLoading(false);
+          }
           return;
         }
-      }
-      
-      setLoading(false);
-    };
 
-    getSession();
+        if (!mounted) return;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
         setUser(session?.user ?? null);
+        sessionChecked = true;
         
-        // Only check username for successful sign in events to avoid loops
-        if (event === 'SIGNED_IN' && session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('user_id', session.user.id)
-            .single();
+        // If user is logged in, check if they have a username
+        if (session?.user) {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('username')
+              .eq('user_id', session.user.id)
+              .single();
 
-          if (!profile?.username) {
-            navigate("/username-setup");
-            return;
+            if (profileError) {
+              console.error("Profile error:", profileError);
+            } else if (!profile?.username) {
+              navigate("/username-setup");
+              return;
+            }
+          } catch (profileErr) {
+            console.error("Profile check failed:", profileErr);
           }
         }
         
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Session check failed:", err);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log("Auth state change:", event, session?.user?.id);
+        
+        setUser(session?.user ?? null);
+        
+        // Only check username for sign in events and after initial session check
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user && sessionChecked) {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('username')
+              .eq('user_id', session.user.id)
+              .single();
+
+            if (profileError) {
+              console.error("Profile error on auth change:", profileError);
+            } else if (!profile?.username) {
+              navigate("/username-setup");
+              return;
+            }
+          } catch (profileErr) {
+            console.error("Profile check failed on auth change:", profileErr);
+          }
+        }
+        
+        // Set loading to false after any auth state change if session was already checked
+        if (sessionChecked && mounted) {
+          setLoading(false);
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
+    // Get initial session after setting up listener
+    getSession();
+
+    // Cleanup function
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (loading) {

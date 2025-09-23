@@ -6,6 +6,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface MpesaCallbackData {
+  Body: {
+    stkCallback: {
+      MerchantRequestID: string;
+      CheckoutRequestID: string;
+      ResultCode: number;
+      ResultDesc: string;
+      CallbackMetadata?: {
+        Item: Array<{
+          Name: string;
+          Value: any;
+        }>;
+      };
+    };
+  };
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -17,169 +34,159 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const callbackData = await req.json();
+    const callbackData: MpesaCallbackData = await req.json();
     console.log("M-Pesa callback received:", JSON.stringify(callbackData, null, 2));
 
-    const { Body } = callbackData;
-    const { stkCallback } = Body;
-    
-    const checkoutRequestID = stkCallback.CheckoutRequestID;
-    const resultCode = stkCallback.ResultCode;
-    const resultDesc = stkCallback.ResultDesc;
+    const { stkCallback } = callbackData.Body;
+    const { CheckoutRequestID, ResultCode, ResultDesc, CallbackMetadata } = stkCallback;
 
-    // Find the transaction record first
-    const { data: transaction, error: transactionFindError } = await supabase
+    // Find the transaction in our database
+    const { data: transaction, error: transactionError } = await supabase
       .from("transactions")
       .select("*")
-      .eq("provider_transaction_id", checkoutRequestID)
+      .eq("provider_transaction_id", CheckoutRequestID)
       .single();
 
-    if (transactionFindError || !transaction) {
-      console.error("Transaction not found:", transactionFindError);
-      return new Response("Transaction not found", { status: 404 });
+    if (transactionError || !transaction) {
+      console.error("Transaction not found:", transactionError);
+      return new Response(
+        JSON.stringify({ error: "Transaction not found" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
-    // Find the payment record
-    const { data: payment, error: paymentFindError } = await supabase
-      .from("payments")
-      .select("*, api_keys(*)")
-      .eq("mpesa_checkout_request_id", checkoutRequestID)
-      .single();
-
-    if (paymentFindError || !payment) {
-      console.error("Payment not found:", paymentFindError);
-      return new Response("Payment not found", { status: 404 });
-    }
-
-    // Determine transaction status based on result code
     let transactionStatus: string;
     let paymentStatus: string;
-    let apiKeyStatus: string;
-    let isActive: boolean;
-    let receiptNumber = "";
-    let errorMessage = "";
-    let successMessage = "";
+    let apiKeyStatus: boolean;
+    let receiptNumber: string | null = null;
+    let notificationTitle: string;
+    let notificationMessage: string;
+    let notificationType: string;
 
-    if (resultCode === 0) {
+    if (ResultCode === 0) {
       // Payment successful
       transactionStatus = "success";
       paymentStatus = "completed";
-      apiKeyStatus = "completed";
-      isActive = true;
-      successMessage = "Payment completed successfully";
+      apiKeyStatus = true;
+      notificationTitle = "Payment Successful! 🎉";
+      notificationMessage = "Your API key has been activated and is ready to use.";
+      notificationType = "success";
 
       // Extract receipt number from callback metadata
-      if (stkCallback.CallbackMetadata && stkCallback.CallbackMetadata.Item) {
-        const items = stkCallback.CallbackMetadata.Item;
-        for (const item of items) {
-          if (item.Name === "MpesaReceiptNumber") {
-            receiptNumber = item.Value;
-            break;
-          }
-        }
+      if (CallbackMetadata?.Item) {
+        const receiptItem = CallbackMetadata.Item.find(item => item.Name === "MpesaReceiptNumber");
+        receiptNumber = receiptItem?.Value || null;
       }
-    } else if (resultCode === 1032) {
-      // User cancelled
+
+      console.log("Payment successful - Receipt:", receiptNumber);
+
+    } else if (ResultCode === 1032) {
+      // Payment cancelled by user
       transactionStatus = "cancelled";
       paymentStatus = "cancelled";
-      apiKeyStatus = "cancelled";
-      isActive = false;
-      errorMessage = "User cancelled the payment";
-    } else if (resultCode === 1037) {
-      // Timeout
-      transactionStatus = "failed";
-      paymentStatus = "timeout";
-      apiKeyStatus = "failed";
-      isActive = false;
-      errorMessage = "Payment request timed out";
+      apiKeyStatus = false;
+      notificationTitle = "Payment Cancelled";
+      notificationMessage = "You cancelled the payment. You can try again anytime.";
+      notificationType = "warning";
+
+      console.log("Payment cancelled by user");
+
     } else {
-      // Other failures
+      // Payment failed
       transactionStatus = "failed";
       paymentStatus = "failed";
-      apiKeyStatus = "failed";
-      isActive = false;
-      errorMessage = resultDesc || "Payment failed";
+      apiKeyStatus = false;
+      notificationTitle = "Payment Failed";
+      notificationMessage = `Payment failed: ${ResultDesc}. Please try again.`;
+      notificationType = "error";
+
+      console.log("Payment failed:", ResultDesc);
     }
 
-    // Update transaction record
-    const { error: transactionUpdateError } = await supabase.rpc('update_transaction_status', {
-      p_transaction_id: transaction.transaction_id,
-      p_status: transactionStatus,
-      p_error_message: errorMessage || null,
-      p_success_message: successMessage || null,
-      p_provider_transaction_id: receiptNumber || checkoutRequestID,
-      p_metadata: {
-        ...transaction.metadata,
-        callback_result_code: resultCode,
-        callback_result_desc: resultDesc,
-        receipt_number: receiptNumber,
-        processed_at: new Date().toISOString()
-      }
-    });
+    // Update transaction status
+    const { error: updateTransactionError } = await supabase
+      .rpc('update_transaction_status', {
+        p_transaction_id: transaction.transaction_id,
+        p_status: transactionStatus,
+        p_mpesa_receipt_number: receiptNumber,
+        p_success_message: ResultCode === 0 ? "Payment completed successfully" : null,
+        p_error_message: ResultCode !== 0 ? ResultDesc : null
+      });
 
-    if (transactionUpdateError) {
-      console.error("Error updating transaction:", transactionUpdateError);
+    if (updateTransactionError) {
+      console.error("Error updating transaction:", updateTransactionError);
     }
 
     // Update payment status
-    const { error: paymentUpdateError } = await supabase
+    const { error: updatePaymentError } = await supabase
       .from("payments")
       .update({
         status: paymentStatus,
-        mpesa_receipt_number: receiptNumber || null,
-        completed_at: transactionStatus === "success" ? new Date().toISOString() : null,
+        mpesa_receipt_number: receiptNumber,
+        updated_at: new Date().toISOString()
       })
-      .eq("id", payment.id);
+      .eq("mpesa_checkout_request_id", CheckoutRequestID);
 
-    if (paymentUpdateError) {
-      console.error("Error updating payment:", paymentUpdateError);
+    if (updatePaymentError) {
+      console.error("Error updating payment:", updatePaymentError);
     }
 
     // Update API key status
-    const { error: apiKeyUpdateError } = await supabase
+    const { error: updateApiKeyError } = await supabase
       .from("api_keys")
       .update({
-        payment_status: apiKeyStatus,
-        is_active: isActive,
+        payment_status: paymentStatus,
+        is_active: apiKeyStatus,
+        updated_at: new Date().toISOString()
       })
-      .eq("payment_id", payment.id);
+      .eq("user_id", transaction.user_id)
+      .eq("payment_status", "pending");
 
-    if (apiKeyUpdateError) {
-      console.error("Error updating API key:", apiKeyUpdateError);
+    if (updateApiKeyError) {
+      console.error("Error updating API key:", updateApiKeyError);
     }
 
     // Send notification to user
-    if (transactionStatus === "success") {
-      await supabase.rpc('send_notification', {
+    const { error: notificationError } = await supabase
+      .rpc('send_notification', {
         p_user_id: transaction.user_id,
-        p_title: "Payment Successful",
-        p_message: `Your payment of KES ${transaction.amount} has been processed successfully. Your API key is now active.`,
-        p_type: "success",
-        p_priority: "high"
+        p_title: notificationTitle,
+        p_message: notificationMessage,
+        p_type: notificationType,
+        p_priority: 'high'
       });
-    } else if (transactionStatus === "cancelled") {
-      await supabase.rpc('send_notification', {
-        p_user_id: transaction.user_id,
-        p_title: "Payment Cancelled",
-        p_message: "Your payment was cancelled. You can try again anytime.",
-        p_type: "info",
-        p_priority: "medium"
-      });
-    } else if (transactionStatus === "failed") {
-      await supabase.rpc('send_notification', {
-        p_user_id: transaction.user_id,
-        p_title: "Payment Failed",
-        p_message: `Your payment failed: ${errorMessage}. Please try again.`,
-        p_type: "error",
-        p_priority: "high"
-      });
+
+    if (notificationError) {
+      console.error("Error sending notification:", notificationError);
     }
 
-    console.log(`Transaction ${transactionStatus} for checkout request: ${checkoutRequestID}, result code: ${resultCode}`);
-    return new Response("OK", { status: 200 });
+    console.log(`Transaction ${transaction.transaction_id} updated to ${transactionStatus}`);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Callback processed successfully",
+        transaction_status: transactionStatus,
+        receipt_number: receiptNumber
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
+
   } catch (error: any) {
-    console.error("Error in M-Pesa callback:", error);
-    return new Response("Internal Server Error", { status: 500 });
+    console.error("Error processing M-Pesa callback:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   }
 };
 

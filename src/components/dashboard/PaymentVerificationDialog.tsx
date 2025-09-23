@@ -79,63 +79,88 @@ export default function PaymentVerificationDialog({
     }
 
     try {
-      console.log(`Polling transaction status (attempt ${pollCount + 1}/${maxPollAttempts})`);
+      console.log(`Polling transaction status with Daraja API (attempt ${pollCount + 1}/${maxPollAttempts})`);
       
+      // Use the improved query function that directly calls Daraja API
       const result = await TransactionService.queryTransactionStatus(checkoutRequestId);
-      console.log('Verification polling result:', result);
+      console.log('Daraja API verification result:', result);
       
       if (result.success && result.transaction) {
         const transaction = result.transaction;
-        console.log('Transaction status from Daraja API:', transaction.status);
+        console.log('Real-time transaction status from Daraja:', transaction.status);
         
         switch (transaction.status) {
           case 'success':
             setStatus('success');
             setIsPolling(false);
             setReceiptNumber(transaction.provider_transaction_id || '');
+            toast({
+              title: "Payment Successful! 🎉",
+              description: "Your API key has been activated and is ready to use.",
+            });
             onPaymentSuccess();
             break;
           case 'failed':
             setStatus('failed');
             setIsPolling(false);
             setErrorMessage(transaction.error_message || 'Payment failed');
+            toast({
+              title: "Payment Failed",
+              description: transaction.error_message || 'Payment could not be processed',
+              variant: "destructive",
+            });
             break;
           case 'cancelled':
             setStatus('cancelled');
             setIsPolling(false);
-            setErrorMessage('Payment was cancelled');
+            setErrorMessage('Payment was cancelled by user');
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment. You can try again anytime.",
+            });
             break;
           case 'pending':
           case 'processing':
-            // Continue polling - transaction is still being processed
+            // Continue polling - transaction is still being processed by Safaricom
+            console.log('Payment still processing with Safaricom, continuing to poll...');
             setPollCount(prev => prev + 1);
             setTimeout(pollTransactionStatus, pollInterval);
             break;
           default:
             // Continue polling for unknown statuses
+            console.log(`Unknown status: ${transaction.status}, continuing to poll...`);
             setPollCount(prev => prev + 1);
             setTimeout(pollTransactionStatus, pollInterval);
             break;
         }
       } else {
-        // Continue polling if we can't get transaction status
+        // API query failed, continue polling
+        console.warn('Failed to query transaction status from Daraja API, retrying...');
         setPollCount(prev => prev + 1);
         setTimeout(pollTransactionStatus, pollInterval);
       }
     } catch (error: any) {
-      console.error('Error polling transaction status:', error);
+      console.error('Error polling Daraja API transaction status:', error);
       
-      // If we get a network error or the function doesn't exist, continue polling
-      // but show a warning after a few attempts
-      if (pollCount > 5) {
-        console.warn('Multiple polling errors detected, but continuing...');
+      // Handle rate limiting from Daraja API
+      if (error.message?.includes('Spike arrest') || error.message?.includes('rate limit')) {
+        console.warn('Daraja API rate limit detected, increasing poll interval...');
+        setPollCount(prev => prev + 1);
+        setTimeout(pollTransactionStatus, pollInterval * 2); // Double the interval
+        return;
       }
       
-      // If we've had too many errors, consider it a timeout
-      if (pollCount > 10) {
-        console.error('Too many polling errors, treating as timeout');
+      // Show warning after multiple attempts
+      if (pollCount > 3) {
+        console.warn('Multiple Daraja API polling errors detected, but continuing...');
+      }
+      
+      // Stop polling only after many consecutive errors
+      if (pollCount > 15) {
+        console.error('Too many consecutive Daraja API errors, treating as timeout');
         setStatus('timeout');
         setIsPolling(false);
+        setErrorMessage('Unable to verify payment status. Please check your M-Pesa messages or contact support.');
         return;
       }
       
@@ -197,17 +222,17 @@ export default function PaymentVerificationDialog({
   const getStatusDescription = () => {
     switch (status) {
       case 'verifying':
-        return `Please wait while we verify your payment with Safaricom. Check your phone for the M-Pesa prompt and complete the payment. (${pollCount}/${maxPollAttempts})`;
+        return `Please wait while we verify your payment with Safaricom M-Pesa in real-time. Check your phone for the STK push prompt and complete the payment. (${pollCount}/${maxPollAttempts})`;
       case 'success':
-        return '🎉 Congratulations! Your payment has been processed successfully! Your API key is now active and ready to use.';
+        return '🎉 Congratulations! Your payment has been verified with Safaricom and processed successfully! Your API key is now active and ready to use.';
       case 'failed':
-        return errorMessage || 'Your payment could not be processed. Please try again.';
+        return errorMessage || 'Your payment could not be processed according to Safaricom records. Please try again.';
       case 'cancelled':
-        return 'You cancelled the payment. You can try again anytime.';
+        return 'You cancelled the payment on your M-Pesa prompt. You can try again anytime.';
       case 'timeout':
-        return 'Payment verification timed out. Please check your phone for the M-Pesa prompt or try again. The payment may still be processing.';
+        return 'Payment verification timed out. Please check your phone for the M-Pesa prompt or try again. The payment may still be processing with Safaricom.';
       default:
-        return 'Checking payment status...';
+        return 'Checking payment status with Safaricom M-Pesa...';
     }
   };
 
