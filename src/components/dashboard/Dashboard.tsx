@@ -162,7 +162,7 @@ export default function Dashboard() {
         <div className="flex items-start md:items-center justify-between mb-6 md:mb-8 animate-slide-in-right gap-3">
           <div className="min-w-0">
             <h1 className="text-3xl md:text-4xl leading-tight text-balance break-anywhere font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
-              ZETECH MD BOT
+              DEV-MAXWELL APIs
             </h1>
             <p className="text-muted-foreground text-base md:text-lg text-balance">API Key Management Dashboard</p>
             {profile && (
@@ -261,7 +261,7 @@ export default function Dashboard() {
             <Card>
               <CardContent className="text-center py-12">
                 <Gift className="h-16 w-16 text-primary mx-auto mb-6" />
-                <h3 className="text-2xl font-poppins font-bold mb-4">Welcome to ZETECH MD BOT!</h3>
+                <h3 className="text-2xl font-poppins font-bold mb-4">Welcome to DEV-MAXWELL APIs!</h3>
                 <p className="text-muted-foreground mb-6 text-lg">
                   Get started with your free 7-day trial and experience the power of our AI bot.
                 </p>

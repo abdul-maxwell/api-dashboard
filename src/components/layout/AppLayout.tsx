@@ -102,7 +102,7 @@ export function AppLayout() {
                 </div>
               </SheetContent>
             </Sheet>
-            <Link to="/" className="font-poppins font-semibold tracking-tight">ZETECH MD BOT</Link>
+            <Link to="/" className="font-poppins font-semibold tracking-tight">DEV-MAXWELL APIs</Link>
           </div>
         </div>
       </header>

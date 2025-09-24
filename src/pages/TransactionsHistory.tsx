@@ -221,7 +221,7 @@ export default function TransactionsHistory() {
             </Button>
             <div className="min-w-0">
               <h1 className="text-3xl md:text-4xl leading-tight text-balance break-anywhere font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Transaction History
+                DEV-MAXWELL APIs • Transactions
               </h1>
               <p className="text-muted-foreground text-base md:text-lg text-balance">View all your payment and transaction records</p>
             </div>
