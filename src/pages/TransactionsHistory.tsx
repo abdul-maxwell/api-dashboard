@@ -208,8 +208,8 @@ export default function TransactionsHistory() {
     <div className="min-h-screen bg-gradient-secondary animate-fade-in">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 animate-slide-in-right">
-          <div className="flex items-center gap-4">
+        <div className="flex items-start md:items-center justify-between mb-6 md:mb-8 animate-slide-in-right gap-3">
+          <div className="flex items-start md:items-center gap-3 md:gap-4 min-w-0">
             <Button
               variant="outline"
               size="sm"
@@ -219,11 +219,11 @@ export default function TransactionsHistory() {
               <ArrowLeft className="h-4 w-4" />
               Back to Dashboard
             </Button>
-            <div>
-              <h1 className="text-4xl font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <div className="min-w-0">
+              <h1 className="text-3xl md:text-4xl leading-tight text-balance break-anywhere font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
                 Transaction History
               </h1>
-              <p className="text-muted-foreground text-lg">View all your payment and transaction records</p>
+              <p className="text-muted-foreground text-base md:text-lg text-balance">View all your payment and transaction records</p>
             </div>
           </div>
           <Button

@@ -156,6 +156,16 @@ All colors MUST be HSL.
   .mobile-x-scroll {
     @apply overflow-x-auto -mx-4 px-4;
   }
+
+  /* Word-wrapping helpers for mobile */
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
   /* Modern button hover effects */
   .btn-glow {
     @apply relative overflow-hidden transition-all duration-300;

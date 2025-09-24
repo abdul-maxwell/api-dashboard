@@ -159,16 +159,16 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-secondary animate-fade-in">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 animate-slide-in-right">
-          <div>
-            <h1 className="text-4xl font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
+        <div className="flex items-start md:items-center justify-between mb-6 md:mb-8 animate-slide-in-right gap-3">
+          <div className="min-w-0">
+            <h1 className="text-3xl md:text-4xl leading-tight text-balance break-anywhere font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
               ZETECH MD BOT
             </h1>
-            <p className="text-muted-foreground text-lg">API Key Management Dashboard</p>
+            <p className="text-muted-foreground text-base md:text-lg text-balance">API Key Management Dashboard</p>
             {profile && (
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="secondary" className="font-medium">
-                  {profile.email}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge variant="secondary" className="font-medium break-anywhere max-w-full">
+                  <span className="break-anywhere">{profile.email}</span>
                 </Badge>
                 {trialKeys.length > 0 && (
                   <Badge className="bg-gradient-primary font-medium">
@@ -179,7 +179,7 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
             <NotificationCenter userId={user?.id || ''} />
             <Button 
               variant="outline" 
@@ -242,9 +242,9 @@ export default function Dashboard() {
 
         {/* API Keys Section */}
         <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-poppins font-bold">API Keys</h2>
-            <div className="flex gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-2xl md:text-3xl font-poppins font-bold text-balance">API Keys</h2>
+            <div className="flex gap-3 flex-shrink-0">
               {!hasEverHadTrial && apiKeys.length === 0 ? (
                 <ClaimTrialDialog onTrialClaimed={fetchApiKeys} />
               ) : (
