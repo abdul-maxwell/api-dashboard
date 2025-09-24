@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Smartphone, Clock, Zap, Crown, Infinity, Package, Star, CheckCircle, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { TransactionService } from "@/lib/transactionService";
 import PaymentVerificationDialog from "./PaymentVerificationDialog";
@@ -64,6 +66,7 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
   const [promoCode, setPromoCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [packages, setPackages] = useState<any[]>([]);
+  const [promoOpen, setPromoOpen] = useState(false);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const { toast } = useToast();
 
@@ -336,7 +339,74 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
           {/* Pricing Plans */}
           <div className="space-y-4">
             <Label className="text-lg font-poppins font-semibold">Choose Your Plan</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Mobile: carousel */}
+            <div className="block sm:hidden">
+              {packages.length > 0 ? (
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {packages.map((pkg) => (
+                      <CarouselItem key={pkg.id} className="basis-[85%] pl-2">
+                        <Card
+                          className={`cursor-pointer transition-smooth card-hover ${
+                            selectedPlan === pkg.duration
+                              ? 'ring-2 ring-primary shadow-[var(--shadow-elegant)]'
+                              : 'hover:shadow-[var(--shadow-card)]'
+                          } ${pkg.is_featured ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}
+                          onClick={() => setSelectedPlan(pkg.duration)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className={`p-2 rounded-lg ${pkg.is_featured ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
+                                  {pkg.is_featured ? <Crown className="w-5 h-5 text-yellow-600" /> : <Zap className="w-5 h-5 text-blue-600" />}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-poppins font-semibold">{pkg.name}</h3>
+                                    {pkg.is_featured && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        <Star className="h-3 w-3 mr-1" />
+                                        Featured
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">{pkg.description}</p>
+                                  <p className="text-xs text-muted-foreground">{pkg.duration.replace('_', ' ')} • {pkg.duration_days} days</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="flex items-center gap-2">
+                                  {pkg.original_price_ksh > pkg.price_ksh && (
+                                    <span className="text-sm text-muted-foreground line-through">KSh {pkg.original_price_ksh}</span>
+                                  )}
+                                  <div className="text-xl font-bold text-primary">KSh {pkg.price_ksh}</div>
+                                </div>
+                                {pkg.original_price_ksh > pkg.price_ksh && (
+                                  <Badge variant="destructive" className="text-xs mt-1">
+                                    -{Math.round(((pkg.original_price_ksh - pkg.price_ksh) / pkg.original_price_ksh) * 100)}% OFF
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <div className="flex justify-between mt-2 px-2">
+                    <CarouselPrevious className="relative" />
+                    <CarouselNext className="relative" />
+                  </div>
+                </Carousel>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4" />
+                  <p>Loading packages...</p>
+                </div>
+              )}
+            </div>
+            {/* Desktop/tablet: grid */}
+            <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 gap-4">
               {packages.length > 0 ? packages.map((pkg) => (
                 <Card
                   key={pkg.id}
@@ -394,55 +464,64 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
             </div>
           </div>
 
-          {/* Promo Code */}
-          <div className="space-y-4">
-            <Label htmlFor="promo">Promo Code (Optional)</Label>
-            <div className="flex gap-2">
-              <Input
-                id="promo"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                placeholder="Enter promo code"
-                disabled={isValidatingPromo}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handlePromoCodeValidation}
-                disabled={isValidatingPromo || !promoCode.trim()}
-              >
-                {isValidatingPromo ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                ) : (
-                  "Apply"
-                )}
-              </Button>
+          {/* Promo Code (collapsible) */}
+          <Collapsible open={promoOpen} onOpenChange={setPromoOpen}>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="promo" className="mb-0">Promo Code (Optional)</Label>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">{promoOpen ? 'Hide' : 'Add'}</Button>
+              </CollapsibleTrigger>
             </div>
-            {appliedDiscount && (
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                      Promo code applied: {appliedDiscount.discount.name}
-                    </span>
-                  </div>
+            <CollapsibleContent>
+              <div className="space-y-4 mt-2">
+                <div className="flex gap-2">
+                  <Input
+                    id="promo"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Enter promo code"
+                    disabled={isValidatingPromo}
+                  />
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={removePromoCode}
-                    className="text-green-600 hover:text-green-700"
+                    variant="outline"
+                    onClick={handlePromoCodeValidation}
+                    disabled={isValidatingPromo || !promoCode.trim()}
                   >
-                    <X className="h-4 w-4" />
+                    {isValidatingPromo ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    ) : (
+                      "Apply"
+                    )}
                   </Button>
                 </div>
-                <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                  You saved {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(appliedDiscount.discountAmount)}
-                </p>
+                {appliedDiscount && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                          Promo code applied: {appliedDiscount.discount.name}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={removePromoCode}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                      You saved {new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(appliedDiscount.discountAmount)}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* API Key Name */}
           <div className="space-y-2">
