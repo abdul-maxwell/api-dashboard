@@ -322,7 +322,7 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
           Purchase API Key
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl md:sm:max-w-2xl w-[95vw] sm:w-auto animate-scale-in max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-2xl font-poppins font-bold bg-gradient-primary bg-clip-text text-transparent">
             Purchase API Key

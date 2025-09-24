@@ -1,11 +1,13 @@
 import { useMemo } from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Home, CreditCard, Menu, Key, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = useMemo(() => (
     [
@@ -42,6 +44,18 @@ export function AppLayout() {
                     </Link>
                   ))}
                 </nav>
+                <div className="mt-6">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      navigate("/auth");
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </div>
               </SheetContent>
             </Sheet>
             <Link to="/" className="font-poppins font-semibold tracking-tight">ZETECH MD BOT</Link>
