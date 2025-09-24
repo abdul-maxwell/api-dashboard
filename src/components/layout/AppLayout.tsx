@@ -2,7 +2,7 @@ import { useMemo, useEffect, useState } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Home, CreditCard, Menu, Key, User } from "lucide-react";
+import { Home, CreditCard, Menu, Key, User, Users, Package, Tag, Settings, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function AppLayout() {
@@ -65,11 +65,26 @@ export function AppLayout() {
                   <div className="mt-6">
                     <div className="px-3 text-xs uppercase tracking-wide text-muted-foreground mb-2">Admin</div>
                     <nav className="grid gap-1">
-                      <Link to="/admin/dashboard?tab=users" className={`px-3 py-2 rounded-md transition-colors ${location.pathname.startsWith('/admin/dashboard') ? 'hover:bg-muted' : 'hover:bg-muted'}`}>Users & API Keys</Link>
-                      <Link to="/admin/dashboard?tab=packages" className="px-3 py-2 rounded-md hover:bg-muted">Packages</Link>
-                      <Link to="/admin/dashboard?tab=discounts" className="px-3 py-2 rounded-md hover:bg-muted">Discounts</Link>
-                      <Link to="/admin/dashboard?tab=transactions" className="px-3 py-2 rounded-md hover:bg-muted">Transactions</Link>
-                      <Link to="/admin/dashboard/actions" className="px-3 py-2 rounded-md hover:bg-muted">Advanced Actions</Link>
+                      <Link to="/admin/dashboard?tab=users" className={`px-3 py-2 rounded-md transition-colors flex items-center gap-2 hover:bg-muted`}>
+                        <Users className="h-4 w-4" />
+                        <span>Users & API Keys</span>
+                      </Link>
+                      <Link to="/admin/dashboard?tab=packages" className="px-3 py-2 rounded-md hover:bg-muted flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span>Packages</span>
+                      </Link>
+                      <Link to="/admin/dashboard?tab=discounts" className="px-3 py-2 rounded-md hover:bg-muted flex items-center gap-2">
+                        <Tag className="h-4 w-4" />
+                        <span>Discounts</span>
+                      </Link>
+                      <Link to="/admin/dashboard?tab=transactions" className="px-3 py-2 rounded-md hover:bg-muted flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span>Transactions</span>
+                      </Link>
+                      <Link to="/admin/dashboard/actions" className="px-3 py-2 rounded-md hover:bg-muted flex items-center gap-2">
+                        <Wrench className="h-4 w-4" />
+                        <span>Advanced Actions</span>
+                      </Link>
                     </nav>
                   </div>
                 )}
