@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Home, CreditCard, Menu, Shield, User } from "lucide-react";
+import { Home, CreditCard, Menu, Key, User } from "lucide-react";
 
 export function AppLayout() {
   const location = useLocation();
@@ -11,7 +11,7 @@ export function AppLayout() {
     [
       { to: "/", label: "Home", icon: Home },
       { to: "/transactions", label: "Transactions", icon: CreditCard },
-      { to: "/admin", label: "Admin", icon: Shield },
+      { to: "/apis", label: "APIs", icon: Key },
       { to: "/auth", label: "Account", icon: User },
     ]
   ), []);

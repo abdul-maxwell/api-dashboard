@@ -8,8 +8,8 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 240 100% 99%;
-    --foreground: 230 15% 15%;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
     --card-foreground: 230 15% 15%;
@@ -17,9 +17,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 230 15% 15%;
 
-    --primary: 262 83% 58%;
+    /* Safaricom-style greens */
+    --primary: 142 72% 35%; /* primary green */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 262 100% 75%;
+    --primary-glow: 142 70% 45%;
 
     --secondary: 220 13% 95%;
     --secondary-foreground: 230 15% 15%;
@@ -27,8 +28,8 @@ All colors MUST be HSL.
     --muted: 220 13% 95%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 262 83% 95%;
-    --accent-foreground: 262 83% 25%;
+    --accent: 142 72% 96%;
+    --accent-foreground: 142 72% 20%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -41,14 +42,14 @@ All colors MUST be HSL.
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 262 83% 58%;
+    --ring: 142 72% 35%;
 
     --radius: 0.75rem;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 100% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(220 13% 95%), hsl(240 100% 99%));
-    --gradient-accent: linear-gradient(135deg, hsl(262 83% 95%), hsl(220 13% 95%));
+    --gradient-primary: linear-gradient(135deg, hsl(142 72% 35%), hsl(142 70% 45%));
+    --gradient-secondary: linear-gradient(135deg, hsl(220 13% 95%), hsl(0 0% 100%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 72% 96%), hsl(220 13% 95%));
     
     /* Shadows */
     --shadow-elegant: 0 10px 30px -10px hsl(262 83% 58% / 0.3);
@@ -138,7 +139,8 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-inter;
+    @apply bg-background text-foreground;
+    font-family: "Futura", "Poppins", "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     overflow-x: hidden;
   }
 }
