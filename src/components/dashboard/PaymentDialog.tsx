@@ -6,9 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CreditCard, Smartphone, Clock, Zap, Crown, Infinity, Package, Star, CheckCircle, X } from "lucide-react";
+import { CreditCard, Smartphone, CheckCircle, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { TransactionService } from "@/lib/transactionService";
@@ -17,45 +16,6 @@ import PaymentVerificationDialog from "./PaymentVerificationDialog";
 interface PaymentDialogProps {
   onPaymentInitiated: () => void;
 }
-
-const pricingPlans = [
-  {
-    duration: "1_week",
-    label: "1 Week",
-    price: 50,
-    icon: Clock,
-    description: "Perfect for short-term projects",
-    color: "text-blue-500",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-  },
-  {
-    duration: "30_days",
-    label: "1 Month",
-    price: 100,
-    icon: Zap,
-    description: "Great for ongoing development",
-    color: "text-green-500",
-    bgColor: "bg-green-50 dark:bg-green-900/20",
-  },
-  {
-    duration: "60_days",
-    label: "2 Months",
-    price: 300,
-    icon: Crown,
-    description: "Extended access for larger projects",
-    color: "text-purple-500",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-  },
-  {
-    duration: "forever",
-    label: "Lifetime",
-    price: 500,
-    icon: Infinity,
-    description: "Unlimited access forever",
-    color: "text-gold-500",
-    bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
-  },
-];
 
 export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -336,132 +296,21 @@ export default function PaymentDialog({ onPaymentInitiated }: PaymentDialogProps
         </DialogHeader>
         
         <form onSubmit={handlePayment} className="space-y-6">
-          {/* Pricing Plans */}
-          <div className="space-y-4">
-            <Label className="text-lg font-poppins font-semibold">Choose Your Plan</Label>
-            {/* Mobile: carousel */}
-            <div className="block sm:hidden">
-              {packages.length > 0 ? (
-                <Carousel className="w-full">
-                  <CarouselContent>
-                    {packages.map((pkg) => (
-                      <CarouselItem key={pkg.id} className="basis-[85%] pl-2">
-                        <Card
-                          className={`cursor-pointer transition-smooth card-hover ${
-                            selectedPlan === pkg.duration
-                              ? 'ring-2 ring-primary shadow-[var(--shadow-elegant)]'
-                              : 'hover:shadow-[var(--shadow-card)]'
-                          } ${pkg.is_featured ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}
-                          onClick={() => setSelectedPlan(pkg.duration)}
-                        >
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className={`p-2 rounded-lg ${pkg.is_featured ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
-                                  {pkg.is_featured ? <Crown className="w-5 h-5 text-yellow-600" /> : <Zap className="w-5 h-5 text-blue-600" />}
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-poppins font-semibold">{pkg.name}</h3>
-                                    {pkg.is_featured && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        <Star className="h-3 w-3 mr-1" />
-                                        Featured
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                                  <p className="text-xs text-muted-foreground">{pkg.duration.replace('_', ' ')} • {pkg.duration_days} days</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="flex items-center gap-2">
-                                  {pkg.original_price_ksh > pkg.price_ksh && (
-                                    <span className="text-sm text-muted-foreground line-through">KSh {pkg.original_price_ksh}</span>
-                                  )}
-                                  <div className="text-xl font-bold text-primary">KSh {pkg.price_ksh}</div>
-                                </div>
-                                {pkg.original_price_ksh > pkg.price_ksh && (
-                                  <Badge variant="destructive" className="text-xs mt-1">
-                                    -{Math.round(((pkg.original_price_ksh - pkg.price_ksh) / pkg.original_price_ksh) * 100)}% OFF
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <div className="flex justify-between mt-2 px-2">
-                    <CarouselPrevious className="relative" />
-                    <CarouselNext className="relative" />
-                  </div>
-                </Carousel>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4" />
-                  <p>Loading packages...</p>
-                </div>
-              )}
-            </div>
-            {/* Desktop/tablet: grid */}
-            <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 gap-4">
-              {packages.length > 0 ? packages.map((pkg) => (
-                <Card
-                  key={pkg.id}
-                  className={`cursor-pointer transition-smooth card-hover ${
-                    selectedPlan === pkg.duration
-                      ? "ring-2 ring-primary shadow-[var(--shadow-elegant)]"
-                      : "hover:shadow-[var(--shadow-card)]"
-                  } ${pkg.is_featured ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}
-                  onClick={() => setSelectedPlan(pkg.duration)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${pkg.is_featured ? 'bg-yellow-100 dark:bg-yellow-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
-                          {pkg.is_featured ? <Crown className="w-5 h-5 text-yellow-600" /> : <Zap className="w-5 h-5 text-blue-600" />}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-poppins font-semibold">{pkg.name}</h3>
-                            {pkg.is_featured && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Star className="h-3 w-3 mr-1" />
-                                Featured
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                          <p className="text-xs text-muted-foreground">{pkg.duration.replace('_', ' ')} • {pkg.duration_days} days</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2">
-                          {pkg.original_price_ksh > pkg.price_ksh && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              KSh {pkg.original_price_ksh}
-                            </span>
-                          )}
-                          <div className="text-xl font-bold text-primary">KSh {pkg.price_ksh}</div>
-                        </div>
-                        {pkg.original_price_ksh > pkg.price_ksh && (
-                          <Badge variant="destructive" className="text-xs mt-1">
-                            -{Math.round(((pkg.original_price_ksh - pkg.price_ksh) / pkg.original_price_ksh) * 100)}% OFF
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )) : (
-                <div className="col-span-2 text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4" />
-                  <p>Loading packages...</p>
-                </div>
-              )}
-            </div>
+          {/* Pricing Plans - simplified dropdown */}
+          <div className="space-y-2">
+            <Label className="font-poppins font-medium">Choose Plan</Label>
+            <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+              <SelectTrigger>
+                <SelectValue placeholder={packages.length ? "Select a plan" : "Loading plans..."} />
+              </SelectTrigger>
+              <SelectContent>
+                {packages.map((pkg) => (
+                  <SelectItem key={pkg.id} value={pkg.duration}>
+                    {pkg.name} • {pkg.duration_days} days • KSh {pkg.price_ksh}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Promo Code (collapsible) */}
