@@ -139,10 +139,23 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-inter;
+    overflow-x: hidden;
   }
 }
 
 @layer components {
+  /* Prevent layout shifts on mobile */
+  .container,
+  .max-w-screen-xl,
+  .prose,
+  .content-wrapper {
+    @apply max-w-full overflow-x-hidden;
+  }
+
+  /* Utility for mobile horizontal scroll sections */
+  .mobile-x-scroll {
+    @apply overflow-x-auto -mx-4 px-4;
+  }
   /* Modern button hover effects */
   .btn-glow {
     @apply relative overflow-hidden transition-all duration-300;

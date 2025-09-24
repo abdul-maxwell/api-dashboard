@@ -373,7 +373,7 @@ export default function TransactionsHistory() {
                 </p>
               </div>
             ) : (
-              <div className="border rounded-lg">
+              <div className="border rounded-lg mobile-x-scroll">
                 <Table>
                   <TableHeader>
                     <TableRow>
