@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -8,6 +8,23 @@ import { supabase } from "@/integrations/supabase/client";
 export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+        setIsAdmin(!!profile && ['admin','super_admin'].includes(profile.role));
+      } catch (_) {}
+    };
+    checkRole();
+  }, []);
 
   const navItems = useMemo(() => (
     [
@@ -44,6 +61,18 @@ export function AppLayout() {
                     </Link>
                   ))}
                 </nav>
+                {isAdmin && (
+                  <div className="mt-6">
+                    <div className="px-3 text-xs uppercase tracking-wide text-muted-foreground mb-2">Admin</div>
+                    <nav className="grid gap-1">
+                      <Link to="/admin/dashboard?tab=users" className={`px-3 py-2 rounded-md transition-colors ${location.pathname.startsWith('/admin/dashboard') ? 'hover:bg-muted' : 'hover:bg-muted'}`}>Users & API Keys</Link>
+                      <Link to="/admin/dashboard?tab=packages" className="px-3 py-2 rounded-md hover:bg-muted">Packages</Link>
+                      <Link to="/admin/dashboard?tab=discounts" className="px-3 py-2 rounded-md hover:bg-muted">Discounts</Link>
+                      <Link to="/admin/dashboard?tab=transactions" className="px-3 py-2 rounded-md hover:bg-muted">Transactions</Link>
+                      <Link to="/admin/dashboard/actions" className="px-3 py-2 rounded-md hover:bg-muted">Advanced Actions</Link>
+                    </nav>
+                  </div>
+                )}
                 <div className="mt-6">
                   <Button
                     variant="destructive"

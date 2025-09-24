@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,6 +80,7 @@ export default function AdminDashboard() {
   const [selectedApiKeyId, setSelectedApiKeyId] = useState<string>("");
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('users');
   const [testApiKeyForm, setTestApiKeyForm] = useState<TestApiKeyForm>({
     apiKey: '',
@@ -115,6 +116,15 @@ export default function AdminDashboard() {
 
     checkAdminAuth();
   }, [navigate]);
+
+  // Sync active tab with query param
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const t = params.get('tab');
+    if (t && ['users','packages','discounts','transactions'].includes(t)) {
+      setActiveTab(t);
+    }
+  }, [location.search]);
 
   const fetchUsers = async () => {
     if (isFetchingUsers) {
@@ -620,41 +630,7 @@ export default function AdminDashboard() {
           </Button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-8 bg-muted p-1 rounded-lg w-fit">
-          <Button
-            variant={activeTab === 'users' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('users')}
-            className="gap-2"
-          >
-            <Users className="h-4 w-4" />
-            Users & API Keys
-          </Button>
-          <Button
-            variant={activeTab === 'packages' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('packages')}
-            className="gap-2"
-          >
-            <Package className="h-4 w-4" />
-            Packages
-          </Button>
-          <Button
-            variant={activeTab === 'discounts' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('discounts')}
-            className="gap-2"
-          >
-            <Tag className="h-4 w-4" />
-            Discounts
-          </Button>
-          <Button
-            variant={activeTab === 'transactions' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('transactions')}
-            className="gap-2"
-          >
-            <Settings className="h-4 w-4" />
-            Transactions
-          </Button>
-        </div>
+        {/* Tab Navigation moved to hamburger menu */}
 
         {/* Tab Content */}
         {activeTab === 'users' && (
